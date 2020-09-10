@@ -1,0 +1,2 @@
+include ':app', ':sinovoble'
+rootProject.name='sinovoBleDemo'
