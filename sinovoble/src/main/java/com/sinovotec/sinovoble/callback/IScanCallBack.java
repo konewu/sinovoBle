@@ -8,5 +8,5 @@ public interface IScanCallBack {
    // void onScanFinish(BluetoothLeDeviceStore bluetoothLeDeviceStore);
 
     //扫描超时
-    void onScanTimeout();
+    void onScanTimeout(String scanResult);
 }

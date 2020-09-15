@@ -3,18 +3,25 @@ package com.sinovotec.sinovobledemo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.alibaba.fastjson.JSONObject;
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.IConnectCallback;
 import com.sinovotec.sinovoble.callback.IScanCallBack;
+import com.sinovotec.sinovoble.common.BleConnectLock;
 
-import org.json.JSONObject;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    private TextView  reslut_tv;
     /**
      * 扫描回调
      */
@@ -22,12 +29,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDeviceFound(String scanResult) {
             Log.w("xxx", "onDeviceFound:" + scanResult);
-            SinovoBle.getInstance().connectLock(mConnCallBack);
+            reslut_tv.setText(scanResult);
         }
 
         @Override
-        public void onScanTimeout() {
+        public void onScanTimeout(String scanResult) {
             Log.w("xxx", "scan timeout");
+            reslut_tv.setText(scanResult);
         }
     };
 
@@ -47,31 +55,88 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onConnectFailure() {
-
+            Log.i("xxx","onConnectFailure ");
         }
 
         @Override
-        public void onDisconnect(boolean isActive) {
+        public void onBluetoothOff() {
+            Log.e("xxx","手机蓝牙被关闭了");
+        }
+
+
+        @Override
+        public void onBluetoothOn() {
+            Log.w("xxx","手机蓝牙打开了");
+        }
+
+        @Override
+        public void onDisconnect() {
             Log.i("xxx","连接回调 IConnectCallback 连接断开");
 
         }
 
         @Override
-        public void onAddLock(com.alibaba.fastjson.JSONObject jsonObject) {
-            Log.i("xxx","添加锁成功，结果是：" + jsonObject);
+        public void onAddLock(String result) {
+            Log.i("xxx","addLock successful：" + result);
+            reslut_tv.setText(result);
         }
 
         @Override
-        public void onSetLockName(com.alibaba.fastjson.JSONObject jsonObject) {
-            Log.i("xxx","修改锁名，结果是：" + jsonObject);
+        public void onCreateUser(String result) {
 
         }
 
         @Override
-        public void onSetLockTime(com.alibaba.fastjson.JSONObject jsonObject) {
-            Log.i("xxx","修改时间，结果是：" + jsonObject);
+        public void onUpdateUser(String result) {
 
         }
+
+        @Override
+        public void onAddData(String result) {
+
+        }
+
+        @Override
+        public void onDelData(String result) {
+
+        }
+
+        @Override
+        public void onVerifyCode(String result) {
+
+        }
+
+        @Override
+        public void onSetLockInfo(String result) {
+
+        }
+
+
+        @Override
+        public void onUnlock(String result) {
+
+        }
+
+        @Override
+        public void onCleanData(String result) {
+
+        }
+
+        @Override
+        public void onRequestLockInfo(String result) {
+
+        }
+
+        @Override
+        public void onRequestData(String result) {
+
+        }
+
+        @Override
+        public void onRequestLog(String result) {
+
+        }
+
     };
 
 
@@ -81,14 +146,45 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Button newbtn = findViewById(R.id.button1);
+        Button adduserbtn = findViewById(R.id.btn_adduser);
+        Button chkp = findViewById(R.id.btn_chkpower);
+
+        final EditText myet = findViewById(R.id.lockid_et);
+        final EditText usernameet = findViewById(R.id.username_et);
+        reslut_tv = findViewById(R.id.result_tv);
+
         newbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SinovoBle.getInstance().setBindMode(true);
-                SinovoBle.getInstance().setLockID("123456789099");
-                SinovoBle.getInstance().setPhoneIMEI("3ea2c312780d");
-                SinovoBle.getInstance().setLockTypeForAdd("F67,F81");
-                SinovoBle.getInstance().startBleScan(mBleScanCallBack);
+                if (myet.getText().length() !=12){
+                    Toast.makeText(getApplicationContext(),"LOCKID can only be a 12 bit number",Toast.LENGTH_LONG).show();
+                }else {
+                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c","FM67,FM810", mBleScanCallBack, mConnCallBack);
+                }
+            }
+        });
+
+        adduserbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                if (usernameet.getText().length() ==0 || usernameet.getText().length() >10){
+//                    Toast.makeText(getApplicationContext(),"LOCKID can only be a 1-10 bit number",Toast.LENGTH_LONG).show();
+//                }else {
+//                    SinovoBle.getInstance().addUser(usernameet.getText().toString());
+//                }
+              //  SinovoBle.getInstance().requestLockInfo("02");
+                BleConnectLock mylock = new BleConnectLock("00:A0:51:F4:E1:85","37120a");
+                ArrayList<BleConnectLock> mylist = new ArrayList<>();
+                mylist.add(mylock);
+
+                SinovoBle.getInstance().autoConnectLock(mylist,mBleScanCallBack, mConnCallBack);
+            }
+        });
+
+        chkp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SinovoBle.getInstance().requestLockInfo("02");
             }
         });
 

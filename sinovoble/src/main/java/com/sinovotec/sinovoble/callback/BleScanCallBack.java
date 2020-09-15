@@ -10,6 +10,7 @@ import android.util.SparseArray;
 import com.alibaba.fastjson.JSONObject;
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.common.BleConfig;
+import com.sinovotec.sinovoble.common.BleConnectLock;
 import com.sinovotec.sinovoble.common.BleScanDevice;
 
 import java.util.LinkedHashMap;
@@ -32,19 +33,10 @@ public class BleScanCallBack extends ScanCallback {
         }
     }
 
-    /**
-     * 获取扫描状态，是否正在扫描
-     * @return bool
-     */
     public boolean isScanning() {
         return isScanning;
     }
 
-
-    /**
-     * 设置扫描状态
-     * @return void
-     */
     public void setScanning(boolean scanning) {
         isScanning = scanning;
     }
@@ -52,8 +44,6 @@ public class BleScanCallBack extends ScanCallback {
 
     /**
      * 单例方式获取蓝牙通信入口
-     *
-     * @return 返回ViseBluetooth
      */
     public static BleScanCallBack getInstance(IScanCallBack scanCallBack) {
 
@@ -76,6 +66,9 @@ public class BleScanCallBack extends ScanCallback {
                                 map.put("lockType", bleScanDevice.GetDevice().getName());
 
                                 iScanCallBack.onDeviceFound(JSONObject.toJSONString(map));
+
+                                //尝试进行自动连接
+                                SinovoBle.getInstance().connectLock();
                                 Log.w(TAG, "扫描到符合条件锁，回调通知客户："+bleScanDevice.GetDevice().getAddress());
                                 break;
                             }
@@ -129,36 +122,46 @@ public class BleScanCallBack extends ScanCallback {
         boolean deviceIn = true;
 
         if (!deviceExist){
-
-            //已经绑定列表中包含此锁，则不再添加
-            if (SinovoBle.getInstance().getBondBleMacList().contains(scanLockMac)){
-                Log.i(TAG, "锁" +scanLockMac +" 已经存在 bondBleMacList中，已经绑定过,不是要连接的锁，不需要再添加");
-                deviceIn = false;
-            }
-
             if (SinovoBle.getInstance().isBindMode()){
+                //已经绑定列表中包含此锁，则不再添加
+                if (SinovoBle.getInstance().getBondBleMacList().contains(scanLockMac)){
+                    Log.i(TAG, "锁" +scanLockMac +" 已经存在 bondBleMacList中，已经绑定过,不是要连接的锁，不需要再添加");
+                    deviceIn = false;
+                }
+
                 //如果广播包内容为空，旧的lock,需要兼容
                 if (manufacturerData == null || manufacturerData.length ==0){
                     deviceIn = true;
-                }
-
-                if (scanLockName ==null ||(SinovoBle.getInstance().getLockTypeForAdd().contains(scanLockName))){
-                    String advData = byte2hex(manufacturerData);
-                    if (advData.length() >14) {
-                        String adLockid = advData.substring(2, 14);
-                        //如果锁广播的是lockid，需要判断id是否跟输入的一致
-                        if (!adLockid.equals(SinovoBle.getInstance().getLockID()) && advData.substring(0, 2).equals("01")) {
-                            deviceIn = false;
-                            Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
-                        }
-                    }
                 }else {
-                    deviceIn = false;
-                    Log.w(TAG, "The device type is different from "+SinovoBle.getInstance().getLockTypeForAdd()+",ignore");
+                    if (scanLockName ==null ||(SinovoBle.getInstance().getLockTypeForAdd().contains(scanLockName))){
+                        String advData = byte2hex(manufacturerData);
+                        if (advData.length() >=14) {
+                            String adLockid = advData.substring(2, 14);
+                            //如果锁广播的是lockid，需要判断id是否跟输入的一致
+                            if (!adLockid.equals(SinovoBle.getInstance().getLockID()) && advData.substring(0, 2).equals("01")) {
+                                deviceIn = false;
+                                Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+                            }
+                        }
+                    }else {
+                        deviceIn = false;
+                        Log.w(TAG, "The device type is different from "+SinovoBle.getInstance().getLockTypeForAdd()+",ignore");
+                    }
+                }
+            }else {     //非绑定模式下，对比mac地址即可
+                deviceIn = false;   //默认不符合加入
+                for (int i=0; i<SinovoBle.getInstance().getAutoConnectList().size(); i++){
+                    BleConnectLock myConnectLock = SinovoBle.getInstance().getAutoConnectList().get(i);
+                    if (myConnectLock.getLockMac().equals(scanLockMac)){
+                        Log.d(TAG,"该设备是需要自动连接的设备："+ scanLockMac);
+                        deviceIn = true;
+                        break;
+                    }
                 }
             }
 
-            if (deviceIn || SinovoBle.getInstance().getLockTypeForAdd().length() <1) {
+            if (deviceIn || (SinovoBle.getInstance().isBindMode() &&SinovoBle.getInstance().getLockTypeForAdd().length() <1)) {
+
                 SinovoBle.getInstance().getScanLockList().add(new BleScanDevice(scanLock, mRssi, manufacturerData, getNowTime()));
                 Log.i(TAG, "Get a new lock:" + scanLockMac + " time:" + getNowTime());
             }

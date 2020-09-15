@@ -1,6 +1,7 @@
 package com.sinovotec.sinovoble.common;
 
 import android.util.Log;
+import android.widget.TextView;
 
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.BleConnCallBack;
@@ -381,8 +382,13 @@ public class BleCommand {
      *  重新起一个子进程来执行 发送命令的活
      */
     private void sendDataToBle(){
-        if (getCommandList().isEmpty() || getCommandList().getFirst() == null){
-            Log.d(TAG,"当前命令队列为空或 队列中第一条命令为null，退出执行");
+        if (getCommandList().isEmpty()){
+            Log.d(TAG,"当前命令队列为空，退出执行");
+            return;
+        }
+
+        if (getCommandList().getFirst() == null){
+            Log.d(TAG,"当前命令队列中第一条命令为null，退出执行");
             return;
         }
 
@@ -419,14 +425,7 @@ public class BleCommand {
         if (getCmdRetry() > BleConfig.getInstance().getOperateRetryCount()){
             Log.e(TAG, "已经重试了3次，不再重试，删除它，执行下一条命令");
             //移除命令队列中的第一条命令
-            if (getCommandList().size() >0){
-                String cmd = getCommandList().getFirst();
-                //如果是同步命令 没法执行，则取消对话框
-//                if (cmd.substring(0,4).equals("fe17") || cmd.substring(0,4).equals("fe13")){
-//                    isSyncing = false;
-//                    if (dialog != null)
-//                        dialog.dismiss();
-//                }
+            if (!getCommandList().isEmpty()){
                 getCommandList().removeFirst();
             }
         }else {
@@ -450,7 +449,7 @@ public class BleCommand {
     private LinkedHashMap bindPhone(String datavalue){
         int len = datavalue.length();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("funCode", "00");
+        map.put("funCode", "addLock");
 
         if (len<2){
             map.put("errCode", "01");   //数据长度有误
@@ -462,6 +461,8 @@ public class BleCommand {
 
         //绑定成功
         if (errCode.equals("00") || errCode.equals("0b")){
+            //取消绑定超时检测
+            SinovoBle.getInstance().getBindTimeoutHandler().removeCallbacksAndMessages(null);
 
             //绑定成功，退出绑定模式 停止扫描
             SinovoBle.getInstance().setBindMode(false);
@@ -476,8 +477,14 @@ public class BleCommand {
             String bleMac = datavalue.substring(0,12);
             String bleSno = datavalue.substring(12,18);
 
+            SinovoBle.getInstance().setConnected(true);
             SinovoBle.getInstance().setLockMAC(bleMac);
             SinovoBle.getInstance().setLockSNO(bleSno);
+
+            //清空自动连接的列表，或许断开只能重连它，不能连接其他设备，除非手动切换
+            SinovoBle.getInstance().getAutoConnectList().clear();
+            BleConnectLock myAutoConnectLock = new BleConnectLock(bleMac, bleSno);
+            SinovoBle.getInstance().getAutoConnectList().add(myAutoConnectLock);
 
             Log.d(TAG,"绑定成功，blemac："+bleMac + ",bleSno:"+bleSno);
 
@@ -486,7 +493,7 @@ public class BleCommand {
             //生成随机密码进行登录
             String rndCode = ComTool.getRndNumber(6,9,10);
             String data = bleSno + SinovoBle.getInstance().getPhoneIMEI() + rndCode;
-            Log.d(TAG,"现在开始进行登录");
+            Log.d(TAG,"现在开始进行登录,data:"+data);
             exeCommand("01", data, true);
 
             //同步锁端的时间
@@ -520,7 +527,8 @@ public class BleCommand {
     private  LinkedHashMap loginAfterBond(String datavalue) {
         int len = datavalue.length();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("funCode", "01");
+        map.put("funCode", "loginAfterBond");
+
 
         if (len<2){
             map.put("errCode", "01");   //数据长度有误
@@ -532,12 +540,11 @@ public class BleCommand {
         map.put("lockSno", SinovoBle.getInstance().getLockSNO());
         map.put("lockName",SinovoBle.getInstance().getLockName());
 
-        Log.d(TAG,"绑定成功后进行登录的错误码："+errCode);
+
         if (errCode.equals("00")){
             String allow = datavalue.substring(0,2);
             map.put("autoCreateUser", allow);
             if (allow.equals("00")){
-                Log.d(TAG, "锁端设置不允许绑定成功后自动创建用户，需要让用户自行登录");
                 return map;
             }else {
                 String nid   = datavalue.substring(2,4);
@@ -565,7 +572,7 @@ public class BleCommand {
     private LinkedHashMap addNewUser(String datavalue){
         int len = datavalue.length();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("funCode", "02");
+        map.put("funCode", "addNewUser");
 
         if (len<2){
             map.put("errCode", "01");   //数据长度有误
@@ -1437,85 +1444,5 @@ public class BleCommand {
 
         return map;
     }
-
-
-    /**
-     * 蓝牙通信时，sno错误的处理
-     */
-//    public static void errSnoToDo(){
-//        Log.d(TAG, "通信的 SNO错误，需要将锁的 sno设置为空");
-//        OperateDB.modifyLock("",21);
-//        OperateDB.modifyLock("ff",18);     //设置同步所有的日志
-//
-//        CommonTool.callHandler(3, myContext.getString(R.string.rebind));
-//
-//        //清空所有的日志
-//        OperateDB.clearLog();
-//        clearAllUsers();
-//        clearAdmins();
-//        mBleService.disConectBle();
-//
-//        //还没完成
-//        isSyncing = false;
-//        if (syncHandler != null){
-//            Log.d(TAG, "同步正常结束，取消30s超时检查的任务");
-//            syncHandler.removeCallbacksAndMessages(null);    //取消定时任务
-//        }
-//    }
-
-
-
-//    public static void writeCharacteristic(byte[] value, UUID serivceUUID, UUID characterUUID){
-//        if (mBleService.mBluetoothGatt == null) {
-//            return;
-//        }
-//        BluetoothGattService service;
-//        long enterTime = System.currentTimeMillis();
-//        while ((System.currentTimeMillis() - enterTime) < HONEY_CMD_TIMEOUT) {
-//            if(isDeviceBusy()){
-//                try {
-//                    Log.e(TAG,"ble 正在忙，休眠100ms 再来检测");
-//                    Thread.sleep(200);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }else {
-//                Log.w(TAG,"ble 空闲了，可以通信");
-//                break;
-//            }
-//        }
-//        try {
-//            service = mBleService.mBluetoothGatt.getService(serivceUUID);
-//            if (service == null){
-//                Log.w(TAG,"mBluetoothGatt.getService  服务为空 ，断开连接");
-//                mBleService.disConectBle();
-//                return;
-//            }
-//            BluetoothGattCharacteristic characteristic = service.getCharacteristic(characterUUID);
-//            characteristic.setValue(value);
-//            boolean status = mBleService.mBluetoothGatt.writeCharacteristic(characteristic);
-//
-//            if (sendDataHandler == null){
-//                sendDataHandler = new Handler(Looper.getMainLooper()); //初始化 句柄，用于定时关闭扫描
-//            }
-//            //延迟1.5秒后再检测 是否已经收到锁端的恢复
-//            sendDataHandler.postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    checkDataReceive();
-//                }
-//            }, 1500);
-//            Log.d(TAG, "指令:"+commandList.getFirst().toString()+" 发送出去了，1.5秒后检测是否收到回复");
-//
-//            if (status) {
-//                Log.w(TAG, "指令:"+commandList.getFirst().toString()+" 发送成功");
-//            }else {
-//                Log.e(TAG, "指令:"+commandList.getFirst().toString()+" 发送失败");
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
 
 }

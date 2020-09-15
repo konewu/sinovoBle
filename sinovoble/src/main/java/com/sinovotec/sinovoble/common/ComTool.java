@@ -221,6 +221,11 @@ public class ComTool {
         Date d1 ;
         Date d2 ;
 
+        if (date1 == null || date2 == null || date1.isEmpty() || date2.isEmpty()){
+            Log.d(TAG,"计算时间差calDateDiff， 输入的时间为空，退出");
+            return diff;
+        }
+
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         switch (dateForm){
             case 0:

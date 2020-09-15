@@ -1,5 +1,7 @@
 package com.sinovotec.sinovoble.common;
 
+import android.util.Log;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -108,9 +110,8 @@ public class Aes128 {
      */
     public static String encryptData(String cleartext, String lockmac){
         //加解密测试
-        String keystr = getKeyFromMAC(lockmac);
+        String keystr = getKeyFromMAC(lockmac.replace(":",""));
         String result = "";
-
         try {
             result = encrypt(keystr,cleartext);
 
@@ -130,7 +131,7 @@ public class Aes128 {
     public static String decryptData(String encryptData, String lockmac){
 
         //加解密测试
-        String keystr = getKeyFromMAC(lockmac);
+        String keystr = getKeyFromMAC(lockmac.replace(":",""));
         String result = "";
 
         try {

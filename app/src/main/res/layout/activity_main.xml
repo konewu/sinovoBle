@@ -7,23 +7,101 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/text1"
+        android:id="@+id/lockid_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="LockID:"/>
+
+    <EditText
+        android:id="@+id/lockid_et"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:inputType="phone|number"
+        android:maxLength="12"
+        android:singleLine="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/lockid_tv"
+        />
 
     <Button
         android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Button"
+        android:text="Add Lock"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toTopOf="@+id/lockid_et"
+        app:layout_constraintBottom_toBottomOf="@+id/lockid_et"
+        app:layout_constraintLeft_toRightOf="@+id/lockid_et"
+        />
+
+    <TextView
+        android:id="@+id/adduser_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@+id/text1"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toBottomOf="@+id/lockid_et"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
+        android:text="Username:"/>
+
+    <EditText
+        android:id="@+id/username_et"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:maxLength="10"
+        android:singleLine="true"
+        app:layout_constraintTop_toBottomOf="@+id/lockid_et"
+        app:layout_constraintLeft_toRightOf="@+id/adduser_tv"
+        />
+
+    <Button
+        android:id="@+id/btn_adduser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add User"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toBottomOf="@+id/lockid_et"
+        app:layout_constraintLeft_toRightOf="@+id/username_et"
+        />
+
+    <Button
+        android:id="@+id/btn_chkpower"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="查电量"
+        android:layout_marginTop="10dp"
+        app:layout_constraintLeft_toLeftOf="@+id/btn_adduser"
+        app:layout_constraintTop_toBottomOf="@+id/btn_adduser"
+        />
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:id="@+id/result_tv"
+        android:background="@android:color/background_light"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <TextView
+        android:id="@+id/result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/result_tv"
+        android:text="Result:"/>
+
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
