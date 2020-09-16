@@ -918,10 +918,15 @@ public class SinovoBle {
     /**
      * 连接超时处理
      */
-    public void checkConnectTime(){
+    private void checkConnectTime(){
         Log.d(TAG, "连接超时检测,开始连接"+ bleConfig.getConnectTimeout() +" 毫秒都没反应，需要设置为未连接");
         setConnectting(false);
         setConnected(false);
+    }
+
+    //对外提供断开连接
+    public void disconnBle(){
+        BleConnCallBack.getInstance().disConectBle();
     }
 
     /**
