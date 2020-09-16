@@ -597,7 +597,6 @@ public class BleConnCallBack extends BluetoothGattCallback {
         Log.d(TAG, "关闭蓝牙连接  disConectBle() ");
 
         refreshDeviceCache(mBluetoothGatt);
-
         if (mBluetoothGatt != null) { mBluetoothGatt.disconnect(); }
 //        if (mBluetoothGatt != null) { mBluetoothGatt.close(); }
 //        if (mBluetoothGatt != null) { mBluetoothGatt = null; }
