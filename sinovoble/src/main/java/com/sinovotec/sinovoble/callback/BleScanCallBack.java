@@ -21,7 +21,7 @@ import static com.sinovotec.sinovoble.common.ComTool.getNowTime;
 
 public class BleScanCallBack extends ScanCallback {
     private static BleScanCallBack instance;                //入口操作管理
-    private static String TAG = "BleLib";
+    private static String TAG = "SinovoBle";
     private boolean isScanning  = false;          //是否正在扫描
 
     IScanCallBack iScanCallBack;          //扫描结果回调

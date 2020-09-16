@@ -12,7 +12,7 @@ import java.util.Random;
 
 public class ComTool {
 
-    private static String TAG = "BleLib";
+    private static String TAG = "SinovoBle";
     /**
      * 将字节转换为 16进制的 字符串
      * @param b

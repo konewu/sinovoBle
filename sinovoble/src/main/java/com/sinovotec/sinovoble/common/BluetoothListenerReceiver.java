@@ -11,7 +11,7 @@ import com.sinovotec.sinovoble.SinovoBle;
 import java.util.Objects;
 
 public class BluetoothListenerReceiver extends BroadcastReceiver {
-    private String TAG = "BleLib";
+    private String TAG = "SinovoBle";
     @Override
     public void onReceive(Context context, Intent intent) {
         if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(Objects.requireNonNull(intent.getAction()))) {

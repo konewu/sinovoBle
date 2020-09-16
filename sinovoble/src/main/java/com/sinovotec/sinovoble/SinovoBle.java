@@ -33,7 +33,7 @@ import java.util.Objects;
 
 
 public class SinovoBle {
-    private String TAG = "BleLib";
+    private String TAG = "SinovoBle";
 
     private String lockID ;                       //锁的ID，用户输入的，用于添加锁的
     private String lockTypeForAdd;                //锁的类型，用户添加锁时需要指定 要添加的设备类型

@@ -29,7 +29,7 @@ import static com.sinovotec.sinovoble.common.ComTool.byte2hex;
 
 public class BleConnCallBack extends BluetoothGattCallback {
     private static BleConnCallBack instance;                //入口操作管理
-    private static String TAG = "BleLib";
+    private static String TAG = "SinovoBle";
 
     private String connectingMAC;                   //记录当前正在连接的锁的mac地址 ，用于在连接断开之后进行重连判断；
     private int reconnectCount = 0;                 //记录某一把锁的重连次数

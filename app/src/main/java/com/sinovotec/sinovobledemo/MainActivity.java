@@ -190,5 +190,7 @@ public class MainActivity extends AppCompatActivity {
 
         //初始化蓝牙
         SinovoBle.getInstance().init(this.getApplicationContext());
+
+
     }
 }

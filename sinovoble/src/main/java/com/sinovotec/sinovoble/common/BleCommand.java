@@ -1,7 +1,6 @@
 package com.sinovotec.sinovoble.common;
 
 import android.util.Log;
-import android.widget.TextView;
 
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.BleConnCallBack;
@@ -18,7 +17,7 @@ public class BleCommand {
     private LinkedList<String> commandList = new LinkedList();      //所有需要执行的命令 都放入到list中排队 ，等待执行
     private static BleCommand instance;             //入口操作管理
     private boolean isExeCmding = false;          //是否正在执行命令
-    private static String TAG = "BleLib";
+    private static String TAG = "SinovoBle";
     private int cmdRetry = 0;
 
     public static BleCommand getInstance() {
