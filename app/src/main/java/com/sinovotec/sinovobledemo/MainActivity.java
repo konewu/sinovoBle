@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 if (myet.getText().length() !=12){
                     Toast.makeText(getApplicationContext(),"LOCKID can only be a 12 bit number",Toast.LENGTH_LONG).show();
                 }else {
-                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c","FM67,FM810", mBleScanCallBack, mConnCallBack);
+                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c", mBleScanCallBack, mConnCallBack);
                 }
             }
         });

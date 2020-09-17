@@ -24,6 +24,8 @@ public class BleConfig {
     private int operateRetryInterval    = DEFAULT_RETRY_INTERVAL;       //数据操作重试间隔时间（毫秒）
     private int maxConnectCount         = DEFAULT_MAX_CONNECT_COUNT;    //最大连接数量
     private int scanRepeatInterval      = DEFAULT_SCAN_REPEAT_INTERVAL; //每隔X时间重复扫描 (毫秒)
+    private int toScanInterval          = DEFAULT_SCAN_REPEAT_INTERVAL; //在重复扫描的时候，设置停止之后多久才再次扫描(毫秒)
+
 
     private BleConfig() {
     }
@@ -218,4 +220,12 @@ public class BleConfig {
         return this;
     }
 
+    public int getToScanInterval() {
+        return toScanInterval;
+    }
+
+    public BleConfig setToScanInterval(int toScanInterval) {
+        this.toScanInterval = toScanInterval;
+        return this;
+    }
 }

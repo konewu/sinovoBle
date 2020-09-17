@@ -36,7 +36,6 @@ public class SinovoBle {
     private String TAG = "SinovoBle";
 
     private String lockID ;                       //锁的ID，用户输入的，用于添加锁的
-    private String lockTypeForAdd;                //锁的类型，用户添加锁时需要指定 要添加的设备类型
     private String phoneIMEI;                     //手机的imei，作为手机id
     private String lockMAC;                       //当前连接锁的蓝牙mac地址
     private String lockSNO;                       //手机与锁进行蓝牙通信使用的 校验码
@@ -93,10 +92,6 @@ public class SinovoBle {
 
     public String getLockID() {
         return lockID;
-    }
-
-    public String getLockTypeForAdd() {
-        return lockTypeForAdd;
     }
 
     public boolean isBindMode() {
@@ -179,13 +174,12 @@ public class SinovoBle {
         return mBleScanCallBack;
     }
 
+    public Handler getScanBleHandler() {
+        return scanBleHandler;
+    }
 
     public void setLockID(String lockID) {
         this.lockID = lockID;
-    }
-
-    public void setLockTypeForAdd(String lockType) {
-        this.lockTypeForAdd = lockType;
     }
 
     public void setBindMode(boolean bindMode) {
@@ -310,10 +304,9 @@ public class SinovoBle {
      * * 添加锁，进行绑定锁
      * @param lockqrID  设置锁的二维码
      * @param phoneID   手机的imei
-     * @param lockType   准备添加锁的类型，多个类型之前用逗号隔开，如果为空，则过滤所有的锁
      * @param mBleScanCallBack  蓝牙扫描回调的接口
      */
-    public void addLock(String lockqrID, String phoneID, String lockType, IScanCallBack mBleScanCallBack, IConnectCallback mConnCallBack){
+    public void addLock(String lockqrID, String phoneID, IScanCallBack mBleScanCallBack, IConnectCallback mConnCallBack){
         SinovoBle.getInstance().setBindMode(true);
         SinovoBle.getInstance().setConnectting(false);
         SinovoBle.getInstance().setLockID(lockqrID);
@@ -322,9 +315,6 @@ public class SinovoBle {
         SinovoBle.getInstance().setmBleScanCallBack(mBleScanCallBack);
         SinovoBle.getInstance().setmConnCallBack(mConnCallBack);
 
-        lockType = lockType.replace("M","");
-        lockType = lockType.replace("m","");
-        SinovoBle.getInstance().setLockTypeForAdd(lockType);
         SinovoBle.getInstance().startBleScan();
     }
 
@@ -833,6 +823,8 @@ public class SinovoBle {
             Log.d(TAG, "Bluetooth scanning is already underway");
             return 1;
         }
+
+        SinovoBle.getInstance().removeHandlerMsg();
 
         //更加 UUID 来过滤
         List<ScanFilter> filters = new ArrayList<>();

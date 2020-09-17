@@ -52,18 +52,6 @@ public interface IConnectCallback {
     //查询锁端的信息
     void onRequestLockInfo(String result);
 
-//    //查询电量
-//    void onRequestPower(String result);
-//
-//    //查询锁状态
-//    void onRequestLock(String result);
-//
-//    //查询锁的版本
-//    void onRequestVersion(String result);
-//
-//    //查询管理员
-//    void onRequestAdmin(String result);
-
     //查询数据，同步用户、绑定列表
     void onRequestData(String result);
 

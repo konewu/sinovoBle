@@ -133,19 +133,14 @@ public class BleScanCallBack extends ScanCallback {
                 if (manufacturerData == null || manufacturerData.length ==0){
                     deviceIn = true;
                 }else {
-                    if (scanLockName ==null ||(SinovoBle.getInstance().getLockTypeForAdd().contains(scanLockName))){
-                        String advData = byte2hex(manufacturerData);
-                        if (advData.length() >=14) {
-                            String adLockid = advData.substring(2, 14);
-                            //如果锁广播的是lockid，需要判断id是否跟输入的一致
-                            if (!adLockid.equals(SinovoBle.getInstance().getLockID()) && advData.substring(0, 2).equals("01")) {
-                                deviceIn = false;
-                                Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
-                            }
+                    String advData = byte2hex(manufacturerData);
+                    if (advData.length() >=14) {
+                        String adLockid = advData.substring(2, 14);
+                        //如果锁广播的是lockid，需要判断id是否跟输入的一致
+                        if (!adLockid.equals(SinovoBle.getInstance().getLockID()) && advData.substring(0, 2).equals("01")) {
+                            deviceIn = false;
+                            Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
                         }
-                    }else {
-                        deviceIn = false;
-                        Log.w(TAG, "The device type is different from "+SinovoBle.getInstance().getLockTypeForAdd()+",ignore");
                     }
                 }
             }else {     //非绑定模式下，对比mac地址即可
@@ -160,8 +155,7 @@ public class BleScanCallBack extends ScanCallback {
                 }
             }
 
-            if (deviceIn || (SinovoBle.getInstance().isBindMode() &&SinovoBle.getInstance().getLockTypeForAdd().length() <1)) {
-
+            if (deviceIn) {
                 SinovoBle.getInstance().getScanLockList().add(new BleScanDevice(scanLock, mRssi, manufacturerData, getNowTime()));
                 Log.i(TAG, "Get a new lock:" + scanLockMac + " time:" + getNowTime());
             }
@@ -200,9 +194,14 @@ public class BleScanCallBack extends ScanCallback {
 
         SinovoBle.getInstance().getBluetoothAdapter().getBluetoothLeScanner().stopScan(instance);
         if (SinovoBle.getInstance().isScanAgain() ) {
-            Log.d(TAG, "继续开始扫描");
             if (BleConfig.getInstance().getScanTimeout() == -1) {
-                SinovoBle.getInstance().bleScan(iScanCallBack);
+                SinovoBle.getInstance().getScanBleHandler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "停止1s后，继续开始扫描");
+                        SinovoBle.getInstance().bleScan(iScanCallBack);
+                    }
+                }, 1000);
             }
         }
     }

@@ -34,5 +34,5 @@ public class BleConstant {
 
     //yankee
     public static final int DEFAULT_SCAN_REPEAT_INTERVAL = -1;
-    public static final String DEFAULT_LOCKTYPE = "F67,F60";
+
 }
