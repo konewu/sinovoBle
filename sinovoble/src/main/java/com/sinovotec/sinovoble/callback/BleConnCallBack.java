@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -432,14 +433,14 @@ public class BleConnCallBack extends BluetoothGattCallback {
 
     /**
      * 处理蓝牙端发过来的数据
-     * @param jsonObject
+     * @param jsonObject  蓝牙发送过来的数据
      */
     void afterReceiveData(JSONObject jsonObject){
         Object funCode = jsonObject.get("funCode");
         Object errCode = jsonObject.get("errCode");
 
         //处理绑定结果 绑定失败的情况下，需要通过接口告知用户 ； 绑定成功不用立马告知用户
-        if (Objects.equals(funCode, "00")){
+        if (Objects.equals(funCode, "addLock")){
             if (Objects.equals(errCode, "00") || Objects.equals(errCode, "0b")){
                 SinovoBle.getInstance().setConnected(true);
             }else {

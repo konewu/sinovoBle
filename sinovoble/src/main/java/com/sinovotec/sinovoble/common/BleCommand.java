@@ -526,8 +526,7 @@ public class BleCommand {
     private  LinkedHashMap loginAfterBond(String datavalue) {
         int len = datavalue.length();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("funCode", "loginAfterBond");
-
+        map.put("funCode", "loginAfterAddLock");
 
         if (len<2){
             map.put("errCode", "01");   //数据长度有误
