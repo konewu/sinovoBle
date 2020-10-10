@@ -43,13 +43,9 @@ public class MainActivity extends AppCompatActivity {
      * 连接回调
      */
     private IConnectCallback mConnCallBack = new IConnectCallback() {
-        @Override
-        public void onConnectSuccess() {
-            Log.w("xxx","连接回调 IConnectCallback 连接成功");
-        }
 
         @Override
-        public void onValueReturn() {
+        public void onConnectSuccess(String macAddress) {
 
         }
 
@@ -137,6 +133,16 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+        @Override
+        public void onDynamicCodeStatus(String result) {
+
+        }
+
+        @Override
+        public void onReceiveDataFailed() {
+
+        }
+
     };
 
 
@@ -159,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                 if (myet.getText().length() !=12){
                     Toast.makeText(getApplicationContext(),"LOCKID can only be a 12 bit number",Toast.LENGTH_LONG).show();
                 }else {
-                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c", mBleScanCallBack, mConnCallBack);
+                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c");
                 }
             }
         });
@@ -167,17 +173,11 @@ public class MainActivity extends AppCompatActivity {
         adduserbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                if (usernameet.getText().length() ==0 || usernameet.getText().length() >10){
-//                    Toast.makeText(getApplicationContext(),"LOCKID can only be a 1-10 bit number",Toast.LENGTH_LONG).show();
-//                }else {
-//                    SinovoBle.getInstance().addUser(usernameet.getText().toString());
-//                }
-              //  SinovoBle.getInstance().requestLockInfo("02");
                 BleConnectLock mylock = new BleConnectLock("00:A0:51:F4:E1:85","37120a");
                 ArrayList<BleConnectLock> mylist = new ArrayList<>();
                 mylist.add(mylock);
 
-                SinovoBle.getInstance().autoConnectLock(mylist,mBleScanCallBack, mConnCallBack);
+                SinovoBle.getInstance().autoConnectLock(mylist);
             }
         });
 
@@ -189,8 +189,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //初始化蓝牙
-        SinovoBle.getInstance().init(this.getApplicationContext());
-
-
+        SinovoBle.getInstance().init(this.getApplicationContext(),mBleScanCallBack, mConnCallBack);
     }
 }

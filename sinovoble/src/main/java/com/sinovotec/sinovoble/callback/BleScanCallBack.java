@@ -9,7 +9,6 @@ import android.util.SparseArray;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sinovotec.sinovoble.SinovoBle;
-import com.sinovotec.sinovoble.common.BleConfig;
 import com.sinovotec.sinovoble.common.BleConnectLock;
 import com.sinovotec.sinovoble.common.BleScanDevice;
 
@@ -23,10 +22,9 @@ public class BleScanCallBack extends ScanCallback {
     private static BleScanCallBack instance;                //入口操作管理
     private static String TAG = "SinovoBle";
     private boolean isScanning  = false;          //是否正在扫描
-
     IScanCallBack iScanCallBack;          //扫描结果回调
 
-    public BleScanCallBack(IScanCallBack scanCallBack){
+    private BleScanCallBack(IScanCallBack scanCallBack){
         this.iScanCallBack = scanCallBack;
         if (iScanCallBack == null){
             throw new NullPointerException("this scanCallback is null!");
@@ -68,8 +66,21 @@ public class BleScanCallBack extends ScanCallback {
                                 iScanCallBack.onDeviceFound(JSONObject.toJSONString(map));
 
                                 //尝试进行自动连接
-                                SinovoBle.getInstance().connectLock();
-                                Log.w(TAG, "扫描到符合条件锁，回调通知客户："+bleScanDevice.GetDevice().getAddress());
+                                if (SinovoBle.getInstance().isBindMode()) {
+//                                    Log.w(TAG, "绑定模式下，自动进行连接："+bleScanDevice.GetDevice().getAddress());
+                                    SinovoBle.getInstance().connectLock(bleScanDevice);
+                                }else {
+                                    for (int j=0; j<SinovoBle.getInstance().getAutoConnectList().size(); j++){
+                                        String mac = SinovoBle.getInstance().getAutoConnectList().get(j).getLockMac();
+//                                        Log.w(TAG, "读取自动连接列表中的锁mac地址："+ mac + "，扫描到的地址："+bleScanDevice.GetDevice().getAddress());
+                                        if (bleScanDevice.GetDevice().getAddress().equals(mac)){
+//                                            Log.w(TAG, "非绑定模式下，扫描到的地址存在自动连接中 ，现在开始连接");
+                                            SinovoBle.getInstance().connectLock(bleScanDevice);
+                                            break;
+                                        }
+                                    }
+                                }
+//                                Log.w(TAG, "扫描到符合条件锁，回调通知客户："+bleScanDevice.GetDevice().getAddress());
                                 break;
                             }
                         }
@@ -77,7 +88,7 @@ public class BleScanCallBack extends ScanCallback {
 
                     @Override
                     public  void  onScanFailed(int errorCode){
-                        Log.e(TAG, "蓝牙扫描  失败");
+                        Log.e(TAG, "Failed to scan");
                     }
                 };
             }
@@ -145,7 +156,7 @@ public class BleScanCallBack extends ScanCallback {
                 }
             }else {     //非绑定模式下，对比mac地址即可
                 deviceIn = false;   //默认不符合加入
-                for (int i=0; i<SinovoBle.getInstance().getAutoConnectList().size(); i++){
+                for (int i = 0; i< SinovoBle.getInstance().getAutoConnectList().size(); i++){
                     BleConnectLock myConnectLock = SinovoBle.getInstance().getAutoConnectList().get(i);
                     if (myConnectLock.getLockMac().equals(scanLockMac)){
                         Log.d(TAG,"该设备是需要自动连接的设备："+ scanLockMac);
@@ -178,31 +189,29 @@ public class BleScanCallBack extends ScanCallback {
     //停止蓝牙扫描
     //参数 ，是否立即停止（自动扫描的话，停止之后会判断 是否还需要重新扫描）
     public void stopScan() {
-        Log.d(TAG, "stopscanBle 函数，停止扫描  stopScan");
+//        Log.d(TAG, "stopscanBle 函数，停止扫描  stopScan");
         setScanning(false);
-        SinovoBle.getInstance().removeHandlerMsg();
+        SinovoBle.getInstance().removeScanHandlerMsg();
 
         if (SinovoBle.getInstance().getBluetoothAdapter() == null) {
-            Log.d(TAG, "蓝牙 mBleAdapter 为null");
+            Log.d(TAG, "Bluetooth Adapter is null");
             return;
         }
 
         if (!SinovoBle.getInstance().getBluetoothAdapter().isEnabled()) {
-            Log.d(TAG, "蓝牙 未启动");
+            Log.e(TAG, "Bluetooth not enabled");
             return ;
         }
 
         SinovoBle.getInstance().getBluetoothAdapter().getBluetoothLeScanner().stopScan(instance);
-        if (SinovoBle.getInstance().isScanAgain() ) {
-            if (BleConfig.getInstance().getScanTimeout() == -1) {
-                SinovoBle.getInstance().getScanBleHandler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG, "停止1s后，继续开始扫描");
-                        SinovoBle.getInstance().bleScan(iScanCallBack);
-                    }
-                }, 1000);
-            }
+        if (SinovoBle.getInstance().isScanAgain()) {
+            SinovoBle.getInstance().getScanBleHandler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "start to scan gain after 1s");
+                    SinovoBle.getInstance().bleScan(iScanCallBack);
+                }
+            }, 1000);
         }
     }
 }

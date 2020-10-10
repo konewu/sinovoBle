@@ -8,6 +8,7 @@ import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 
 public class ComTool {
@@ -24,8 +25,8 @@ public class ComTool {
         }
         StringBuffer sb = new StringBuffer();
         String tmp ;
-        for (int i = 0; i < b.length; i++) {
-            tmp = Integer.toHexString(b[i] & 0XFF);
+        for (byte value : b) {
+            tmp = Integer.toHexString(value & 0XFF);
             if (tmp.length() == 1) {
                 sb.append("0" + tmp);
             } else {
@@ -61,7 +62,6 @@ public class ComTool {
             //将10进制的acsii码转为16进制
             sbu.append(Integer.toHexString(chars[i]));
         }
-        Log.d(TAG, "字符串：" + value + " 转换为16进制的ACSII码：" + sbu.toString());
         return sbu.toString();
     }
 
@@ -85,7 +85,6 @@ public class ComTool {
         for (int i = 0; i < chars.length; i++) {
             sbu.append((char) Integer.parseInt(chars[i]));
         }
-        Log.d(TAG,"将16进制的ascii码："+value + " 转换字符串："+sbu.toString());
         return sbu.toString();
     }
 
@@ -147,29 +146,29 @@ public class ComTool {
      *
      * @param intervalValue  表示时间间隔的时间值
      *
-     * @return
+     * @return s
      *
      */
     public static String getSpecialTime(String nowtime, int dateForm, int intervalType, int intervalValue){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
         switch (dateForm){
             case 0:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmmss");
+                simpleDateFormat = new SimpleDateFormat("yyMMddHHmmss", Locale.ROOT);
                 break;
             case 1:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
                 break;
             case 3:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmm");
+                simpleDateFormat = new SimpleDateFormat("yyMMddHHmm", Locale.ROOT);
                 break;
             case 4:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT);
                 break;
             case 5:
-                simpleDateFormat = new SimpleDateFormat("HH:mm");
+                simpleDateFormat = new SimpleDateFormat("HH:mm", Locale.ROOT);
                 break;
             case 6:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT);
                 break;
         }
 
@@ -185,7 +184,6 @@ public class ComTool {
                 calendar.setTime(date);
             }
         }
-
 
         switch (intervalType){
             case 0:
@@ -222,35 +220,34 @@ public class ComTool {
         Date d2 ;
 
         if (date1 == null || date2 == null || date1.isEmpty() || date2.isEmpty()){
-            Log.d(TAG,"计算时间差calDateDiff， 输入的时间为空，退出");
             return diff;
         }
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
         switch (dateForm){
             case 0:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmmss");
+                simpleDateFormat = new SimpleDateFormat("yyMMddHHmmss", Locale.ROOT);
                 break;
             case 1:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
                 break;
             case 3:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmm");
+                simpleDateFormat = new SimpleDateFormat("yyMMddHHmm", Locale.ROOT);
                 break;
             case 4:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT);
                 break;
             case 5:
-                simpleDateFormat = new SimpleDateFormat("HH:mm");
+                simpleDateFormat = new SimpleDateFormat("HH:mm", Locale.ROOT);
                 break;
             case 6:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT);
                 break;
             case 7:
-                simpleDateFormat = new SimpleDateFormat("yy-MM-dd");
+                simpleDateFormat = new SimpleDateFormat("yy-MM-dd", Locale.ROOT);
                 break;
             case 8:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
                 break;
         }
 
@@ -324,7 +321,6 @@ public class ComTool {
         if (showSec)
             retime = retime + k[3].substring(6, 8);
 
-        Log.d(TAG, "转换后得到的时间：" + retime);
         return retime;
     }
 
@@ -350,6 +346,4 @@ public class ComTool {
         }
         return imeiStr;
     }
-
-
 }
