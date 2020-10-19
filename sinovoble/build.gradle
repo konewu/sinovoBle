@@ -13,12 +13,24 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
+
+
+        ndk {
+            //设置支持的SO库的平台架构，如果不写，默认支持所有，将会将所有的平台的so都打入包，包的体积变大
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main{
+            jniLibs.srcDirs = ['jnilibs']
         }
     }
 

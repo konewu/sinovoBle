@@ -145,12 +145,24 @@ public class BleScanCallBack extends ScanCallback {
                     deviceIn = true;
                 }else {
                     String advData = byte2hex(manufacturerData);
-                    if (advData.length() >=14) {
-                        String adLockid = advData.substring(2, 14);
-                        //如果锁广播的是lockid，需要判断id是否跟输入的一致
-                        if (!adLockid.equals(SinovoBle.getInstance().getLockID()) && advData.substring(0, 2).equals("01")) {
-                            deviceIn = false;
-                            Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+
+                    //兼容第二批 旧锁
+                    if (advData.length() > 14){
+                        String advtype = advData.substring(0, 2);
+                        if (advtype.equals("01")) {     //01，第二批出的锁，广播的是 锁id
+                            String adLockid = advData.substring(2, 14);
+                            if (!adLockid.equals(SinovoBle.getInstance().getLockID())) {
+                                deviceIn = false;
+                                Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+                            }
+                        }else if (advtype.equals("02")){        //兼容第二批， 02 表示是广播的日志
+                            deviceIn = true;
+                        }else {
+                            String adLockid = advData.substring(0, 12);
+                            if (!adLockid.equals(SinovoBle.getInstance().getLockID())) {
+                                deviceIn = false;
+                                Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+                            }
                         }
                     }
                 }
@@ -208,7 +220,7 @@ public class BleScanCallBack extends ScanCallback {
             SinovoBle.getInstance().getScanBleHandler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "start to scan gain after 1s");
+                    Log.d(TAG, "start to scan again after 1s");
                     SinovoBle.getInstance().bleScan(iScanCallBack);
                 }
             }, 1000);

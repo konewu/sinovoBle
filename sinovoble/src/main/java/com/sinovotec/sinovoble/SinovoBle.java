@@ -25,6 +25,7 @@ import com.sinovotec.sinovoble.common.BleConstant;
 import com.sinovotec.sinovoble.common.BleScanDevice;
 import com.sinovotec.sinovoble.common.BluetoothListenerReceiver;
 import com.sinovotec.sinovoble.common.ComTool;
+import com.sinovotec.encryptlib.LoadLibJni;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -68,6 +69,8 @@ public class SinovoBle {
 
     private int connectTimeout = 8*1000;        //连接超时检测，发起连接后，在超时的时间内得不到响应，则断开进行处理
     private int scanRepeatInterval = 6*1000;    //扫描间隔，开始扫描之后，间隔到指定时间，然后停止扫描，再重新开始扫描
+
+    private  LoadLibJni myJniLib;
 
     /**
      * 单例方式获取蓝牙通信入口
@@ -263,6 +266,9 @@ public class SinovoBle {
         return lockFirmVersion;
     }
 
+    public LoadLibJni getMyJniLib() {
+        return myJniLib;
+    }
 
     /**
      * 初始化
@@ -280,6 +286,10 @@ public class SinovoBle {
             //注册广播，监听蓝牙 状态的该表
             BluetoothListenerReceiver receiver = new BluetoothListenerReceiver();
             context.registerReceiver(receiver,makeFilter());
+
+            //加载 so库，初始化
+            LoadLibJni.LoadLib();
+            myJniLib = new LoadLibJni();
         }
     }
     private IntentFilter makeFilter() {
@@ -292,7 +302,7 @@ public class SinovoBle {
         getBondBleMacList().clear();   //clean the bondBleMacList before starting scan
         setScanAgain(true);
 
-        //绑定模式下，如果
+        //绑定模式下，设置绑定超时检测
         if (isBindMode()) {
             bindTimeoutHandler.postDelayed(new Runnable() {
                 @Override
@@ -307,7 +317,7 @@ public class SinovoBle {
     //绑定超时检测
     private void checkScanResult(){
         Log.e(TAG,"绑定超时检测，超时为1分钟");
-        if (isBindMode() && !isConnected()){
+        if (!isConnected()){
             Log.d(TAG,"绑定超时检测，需要告知回调");
             LinkedHashMap<String, Object> map = new LinkedHashMap<>();
             map.put("scanResult", "0");
@@ -671,7 +681,6 @@ public class SinovoBle {
             return result;
         }
         String data = SinovoBle.getInstance().getLockSNO() + logID;
-
         BleData.getInstance().exeCommand("17", data, false);
 
         return 0;
@@ -915,7 +924,7 @@ public class SinovoBle {
      * @param bluetoothDevice  待连接的设备
      * @return      //是否连接成功
      */
-    public boolean connectBle(final BluetoothDevice bluetoothDevice) {
+    private boolean connectBle(final BluetoothDevice bluetoothDevice) {
         if (SinovoBle.getInstance().getBluetoothAdapter() == null || bluetoothDevice == null) {
             Log.e(TAG, "Bluetooth Adapter is null");
             return false;
@@ -931,15 +940,16 @@ public class SinovoBle {
             return false;
         }
 
+        //add 20201016
+        BleConnCallBack.getInstance().releaseBle();
+
         SinovoBle.getInstance().setConnectting(true);       //标记 已经在开始进行连接
         BleConnCallBack.getInstance().setConnectingMAC(bluetoothDevice.getAddress());       //标记 当前准备连接的地址，以便后面断开进行重连
 
         //防止连接出现133错误, 不能发现Services
         if (BleConnCallBack.getInstance().getmBluetoothGatt() != null ) {
             Log.d(TAG, "connectDevice: closeGatt");
-            BleConnCallBack.getInstance().getmBluetoothGatt().disconnect();
-            BleConnCallBack.getInstance().getmBluetoothGatt().close();
-            BleConnCallBack.getInstance().setmBluetoothGatt(null);
+            BleConnCallBack.getInstance().releaseBle();
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -957,14 +967,6 @@ public class SinovoBle {
         BleConnCallBack.getInstance().disConectBle();
     }
 
-    /**
-     * 释放ble资源
-     */
-    public void releaseBle(){
-        if (BleConnCallBack.getInstance().getmBluetoothGatt() != null) {
-            BleConnCallBack.getInstance().getmBluetoothGatt().close();
-            BleConnCallBack.getInstance().setmBluetoothGatt(null);
-        }
-    }
+
 
 }

@@ -12,11 +12,11 @@ import com.sinovotec.sinovoble.callback.BleConnCallBack;
 import java.util.Objects;
 
 public class BluetoothListenerReceiver extends BroadcastReceiver {
+    private String TAG = "SinovoBle";
     @Override
     public void onReceive(Context context, Intent intent) {
         if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(Objects.requireNonNull(intent.getAction()))) {
             int blueState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
-            String TAG = "SinovoBle";
             switch (blueState) {
                 case BluetoothAdapter.STATE_TURNING_ON:
                     Log.e(TAG, "onReceive---------Bluetooth is turning on");
@@ -32,10 +32,7 @@ public class BluetoothListenerReceiver extends BroadcastReceiver {
                     break;
                 case BluetoothAdapter.STATE_TURNING_OFF:
                     Log.e(TAG, "onReceive---------Bluetooth is turning off");
-                    if (BleConnCallBack.getInstance().getmBluetoothGatt()!=null) {
-                        BleConnCallBack.getInstance().getmBluetoothGatt().close();
-                        BleConnCallBack.getInstance().setmBluetoothGatt(null);
-                    }
+                    BleConnCallBack.getInstance().releaseBle();
 
                     if (SinovoBle.getInstance().getmConnCallBack()!= null) {
                         SinovoBle.getInstance().setConnected(false);
