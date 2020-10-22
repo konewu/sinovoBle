@@ -445,7 +445,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
         Object errCode = jsonObject.get("errCode");
 
         //处理绑定结果 绑定失败的情况下，需要通过接口告知用户 ； 绑定成功不用立马告知用户
-        if (Objects.equals(funCode, "addLock")){
+        if (Objects.equals(funCode, "00")){
             if (Objects.equals(errCode, "00") || Objects.equals(errCode, "0b")){
                 SinovoBle.getInstance().setConnected(true);
             }else {
