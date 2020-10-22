@@ -215,6 +215,7 @@ public class SinovoBle {
     }
 
     public void setConnected(boolean connected) {
+        Log.d(TAG,"设置连接状态：" + connected);
         isConnected = connected;
     }
 
@@ -235,6 +236,7 @@ public class SinovoBle {
     }
 
     public void setScanAgain(boolean scanAgain) {
+        Log.d(TAG,"设置 是否继续扫描："+ scanAgain);
         isScanAgain = scanAgain;
     }
 
@@ -299,6 +301,7 @@ public class SinovoBle {
     }
 
     public int startBleScan(){
+        Log.d(TAG, "调用startBleScan  来扫描");
         getBondBleMacList().clear();   //clean the bondBleMacList before starting scan
         setScanAgain(true);
 
@@ -339,6 +342,7 @@ public class SinovoBle {
             Log.w(TAG,"取消 绑定超时检测");
             SinovoBle.getInstance().getBindTimeoutHandler().removeCallbacksAndMessages(null);
         }
+        Log.d(TAG,"调用 addLock");
         setScanAgain(true);
         setBindMode(true);
         setConnectting(false);
@@ -360,7 +364,7 @@ public class SinovoBle {
             Log.e(TAG,"ScanCallBack or mConnCallBack is null");
             return;
         }
-//        Log.w(TAG, "autoConnectLock 开始进行自动连接。。。。");
+        Log.w(TAG, "autoConnectLock 开始进行自动连接。。。。");
         setScanAgain(true);
         setBindMode(false);
         setConnectting(false);

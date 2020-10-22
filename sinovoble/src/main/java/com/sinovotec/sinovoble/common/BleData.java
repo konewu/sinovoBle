@@ -432,7 +432,7 @@ public class BleData {
     private LinkedHashMap bindPhone(String datavalue){
         int len = datavalue.length();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("funCode", "addLock");
+        map.put("funCode", "00");
 
         if (len<2){
             map.put("errCode", "01");   //数据长度有误
@@ -479,7 +479,7 @@ public class BleData {
             BleConnectLock myAutoConnectLock = new BleConnectLock(lockMac.toString().toUpperCase(), bleSno);
             SinovoBle.getInstance().getAutoConnectList().add(myAutoConnectLock);
 
-//            Log.d(TAG,"绑定成功，blemac："+bleMac + ",bleSno:"+bleSno);
+            Log.d(TAG,"绑定成功，blemac："+bleMac + ",bleSno:"+bleSno);
 
             //生成随机密码进行登录
             String rndCode = ComTool.getRndNumber(6,9,10);
@@ -495,8 +495,8 @@ public class BleData {
             data = bleSno + nowtime;
             exeCommand("10", data, false);       //校准锁端的时间
 
-            map.put("bleMac", bleMac);
-            map.put("bleSno", bleSno);
+            map.put("lockMac", bleMac);
+            map.put("lockSno", bleSno);
             return map;
         }
 

@@ -123,7 +123,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
                                     Log.i(TAG, "Disconnecting from GATT server.");
                                 }
                             }else {
-//                                Log.i(TAG, "连接状态出错，关闭gatt资源,重连尝试");
+                                Log.i(TAG, "连接状态出错，关闭gatt资源,重连尝试");
                                 BleConnCallBack.getInstance().disConectBle();
                             }
                         }
@@ -139,7 +139,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
                                 Log.e(TAG, " Discovered Services Failed, errcode:" + status);
                                 //错误码中返回 129 ，需要关闭蓝牙，在重新打开
                                 if (status == 129) {
-//                                    Log.e(TAG, "----/错误码中返回 129 ，重新初始化蓝牙");
+                                    Log.e(TAG, "----/错误码中返回 129 ，重新初始化蓝牙");
                                     SinovoBle.getInstance().init(SinovoBle.getInstance().getContext(), SinovoBle.getInstance().getmBleScanCallBack(), SinovoBle.getInstance().getmConnCallBack());
                                 }
                             }

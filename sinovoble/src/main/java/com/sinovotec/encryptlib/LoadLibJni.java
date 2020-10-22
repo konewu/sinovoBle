@@ -21,6 +21,8 @@ public class LoadLibJni {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
+  //  public native String stringFromJNI();  //nativi调用
+
     public native String encryptAes(String text, String lockmac);       //encrypt， lockmac Need to remove :
     public native String decryptAes(String ciphertext, String lockmac);  //decrypt， lockmac Need to remove :
     public native String getDyCode(String lockmac, String diff, String starttime, String valid, String vt, String codetype);  //generate  one-Time code、Timed code
