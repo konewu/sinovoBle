@@ -36,7 +36,7 @@ public class BleData {
      * 查询是否正在执行命令
      * @return boolean
      */
-    public boolean isExeCmding() {
+    private boolean isExeCmding() {
         return isExeCmding;
     }
 
@@ -310,20 +310,20 @@ public class BleData {
      * @param data String
      */
     public void exeCommand(String funcode, String data, boolean toTop){
-        String data_send = data;
+        StringBuilder data_send = new StringBuilder(data);
         int byteLen = data.length() /2;
         byteLen += data.length() %2;
 
         //如果data 不够16字节，则在后面补ff
         for (int i=32;i> data.length(); i--) {
-            data_send += "f";
+            data_send.append("f");
         }
         Log.d(TAG, "需要发送的数据，在补f之后："+data_send + ",长度："+data_send.length());
 
         //加密处理
         if (!funcode.equals("00")){
             String mac = SinovoBle.getInstance().getLockMAC().replace(":","");
-            data_send = SinovoBle.getInstance().getMyJniLib().encryptAes(data_send,mac);
+            data_send = new StringBuilder(SinovoBle.getInstance().getMyJniLib().encryptAes(data_send.toString(), mac));
             //data_send = encryptData(data_send, SinovoBle.getInstance().getLockMAC());
         }
 
