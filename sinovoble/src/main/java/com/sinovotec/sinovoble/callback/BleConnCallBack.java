@@ -17,9 +17,7 @@ import com.sinovotec.sinovoble.common.BleData;
 import com.sinovotec.sinovoble.common.BleConnectLock;
 import com.sinovotec.sinovoble.common.BleConstant;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -38,9 +36,9 @@ public class BleConnCallBack extends BluetoothGattCallback {
     private BluetoothGattService mBleGattService;
     private BluetoothGattCharacteristic mBleGattCharacteristic;
 
-    public Handler sendDataHandler = new Handler(Looper.getMainLooper()); //初始化 句柄，用于定时关闭扫描
+    Handler sendDataHandler = new Handler(Looper.getMainLooper()); //初始化 句柄，用于定时关闭扫描
 
-    public BleConnCallBack(){
+    BleConnCallBack(){
         if (SinovoBle.getInstance().getmConnCallBack() == null){
             throw new NullPointerException("this connCallback is null!");
         }
@@ -70,11 +68,11 @@ public class BleConnCallBack extends BluetoothGattCallback {
         this.mBluetoothGatt = mBluetoothGatt;
     }
 
-    public int getReconnectCount() {
+    private int getReconnectCount() {
         return reconnectCount;
     }
 
-    public void setReconnectCount(int reconnectCount) {
+    private void setReconnectCount(int reconnectCount) {
         this.reconnectCount = reconnectCount;
     }
 
@@ -160,9 +158,9 @@ public class BleConnCallBack extends BluetoothGattCallback {
                         @Override
                         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
                             super.onDescriptorRead(gatt, descriptor, status);
-                            if (status == BluetoothGatt.GATT_SUCCESS) {
-//                                Log.d(TAG, "读取Descriptor成功，status：" + status + " ，并更新广播 ACTION_READ_Descriptor_OVER");
-                            }
+//                            if (status == BluetoothGatt.GATT_SUCCESS) {
+////                                Log.d(TAG, "读取Descriptor成功，status：" + status + " ，并更新广播 ACTION_READ_Descriptor_OVER");
+//                            }
                         }
 
                         //读写characteristic时会调用到以下方法
@@ -587,28 +585,6 @@ public class BleConnCallBack extends BluetoothGattCallback {
             e.printStackTrace();
         }
     }
-
-
-    /**
-     * 通过反射机制来 判断 当前蓝牙 是否正在忙，如果忙 ，则等待 30ms 再来检测 ，持续检测2s
-     * @return bool
-     */
-    private boolean isDeviceBusy(){
-        boolean state = false;
-        try {
-            state = (boolean)readField(mBluetoothGatt);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-        return state;
-    }
-
-    private static Object readField(Object object) throws IllegalAccessException, NoSuchFieldException {
-        Field field = object.getClass().getDeclaredField("mDeviceBusy");
-        field.setAccessible(true);
-        return field.get(object);
-    }
-
 
     // 断开连接
     public void disConectBle() {
