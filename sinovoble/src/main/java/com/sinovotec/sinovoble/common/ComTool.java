@@ -1,9 +1,7 @@
 package com.sinovotec.sinovoble.common;
 
 import android.annotation.SuppressLint;
-import android.util.Log;
 
-import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -13,22 +11,21 @@ import java.util.Random;
 
 public class ComTool {
 
-    private static String TAG = "SinovoBle";
     /**
      * 将字节转换为 16进制的 字符串
-     * @param b
-     * @return
+     * @param b byte
+     * @return string
      */
     public static String byte2hex(byte[] b) {
         if (b == null){
             return "";
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String tmp ;
         for (byte value : b) {
             tmp = Integer.toHexString(value & 0XFF);
             if (tmp.length() == 1) {
-                sb.append("0" + tmp);
+                sb.append("0").append(tmp);
             } else {
                 sb.append(tmp);
             }
@@ -39,10 +36,10 @@ public class ComTool {
 
     /**
      * 将字符串转换为 字节
-     * @param hexString
+     * @param hexString s
      * @return  字节数组
      */
-    public static byte[] toByte(String hexString) {
+    static byte[] toByte(String hexString) {
         int len = hexString.length()/2;
         byte[] result = new byte[len];
         for (int i = 0; i < len; i++)
@@ -56,11 +53,10 @@ public class ComTool {
      * @return 16进制的ASCII码
      */
     public static String stringToAscii(String value) {
-        StringBuffer sbu = new StringBuffer();
+        StringBuilder sbu = new StringBuilder();
         char[] chars = value.toCharArray();      //将字符串转为字符数组
-        for (int i = 0; i < chars.length; i++) {
-            //将10进制的acsii码转为16进制
-            sbu.append(Integer.toHexString(chars[i]));
+        for (char aChar : chars) {
+            sbu.append(Integer.toHexString(aChar)); //将10进制的acsii码转为16进制
         }
         return sbu.toString();
     }
@@ -70,20 +66,20 @@ public class ComTool {
     ////                 @参数: ASCII码                                                   ////
     ////                 @结果: 字符串                                                   ////
     ////////////////////////////////////////////////////////////////////////////////////////
-    public static String asciiToString(String value) {
-        StringBuffer sbu = new StringBuffer();
-        String value10="";
+    static String asciiToString(String value) {
+        StringBuilder sbu = new StringBuilder();
+        StringBuilder value10= new StringBuilder();
         for (int i=0; i<value.length(); ){
             int dval = Integer.valueOf(value.substring(i,i+2),16);   //读取一个字节，并转10进制
             if (dval != 0){  // acsii码 0 为空字符，过滤掉
-                value10 += dval + ",";
+                value10.append(dval).append(",");
             }
             i = i + 2;
         }
 
-        String[] chars = value10.split(",");
-        for (int i = 0; i < chars.length; i++) {
-            sbu.append((char) Integer.parseInt(chars[i]));
+        String[] chars = value10.toString().split(",");
+        for (String aChar : chars) {
+            sbu.append((char) Integer.parseInt(aChar));
         }
         return sbu.toString();
     }
@@ -93,23 +89,22 @@ public class ComTool {
      */
     public static String getNowTime(){
         long currentTime = System.currentTimeMillis();
-        String timeNow = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(currentTime);
-        return timeNow;
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).format(currentTime);
     }
 
     /***
      * 计算两个时间差，返回的是的秒s
      * date2 - date1 的时间差
-     * @param date1
-     * @param date2
-     * @return
+     * @param date1 s
+     * @param date2 s
+     * @return long
      */
     public static long calTimeDiff(String date1, String date2) {
         long diff = 0;
         Date d1 ;
         Date d2 ;
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
 
         try {
             d1 = simpleDateFormat.parse(date1);
@@ -138,18 +133,12 @@ public class ComTool {
      * 为5时，表示 HH:mm
      * 为6时，表示 yyyy-MM-dd HH:mm:ss.SSS
      *
-     * @param intervalType  表示时间间隔的类型
-     *                      为0 表示 月
-     *                      为1 表示 天
-     *                      为2 表示 小时
-     *                      为3 表示 分钟
-     *
      * @param intervalValue  表示时间间隔的时间值
      *
      * @return s
      *
      */
-    public static String getSpecialTime(String nowtime, int dateForm, int intervalType, int intervalValue){
+    static String getSpecialTime(int dateForm, int intervalValue){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
         switch (dateForm){
             case 0:
@@ -173,126 +162,21 @@ public class ComTool {
         }
 
         Calendar  calendar = Calendar. getInstance();
-        if (nowtime.length() >0){
-            Date date = null;
-            try {
-                date = simpleDateFormat.parse(nowtime);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            if (date != null) {
-                calendar.setTime(date);
-            }
-        }
-
-        switch (intervalType){
-            case 0:
-                calendar.add( Calendar.MONTH, intervalValue);
-                break;
-            case 1:
-                calendar.add( Calendar.DATE, intervalValue);
-                break;
-            case 2:
-                calendar.add( Calendar.HOUR, intervalValue);
-                break;
-            case 3:
-                calendar.add( Calendar.MINUTE, intervalValue);
-                break;
-        }
+        calendar.add( Calendar.DATE, intervalValue);
 
         Date date= calendar.getTime();
         return simpleDateFormat.format(date);
     }
 
-
-    /***
-     * 计算两个时间差，返回的是的秒s
-     * date2 - date1 的时间差
-     *
-     * @return long
-     * @param date1
-     * @param date2
-     * @return
-     */
-    public static long calDateDiff(int dateForm, String date1, String date2) {
-        long diff = 0;
-        Date d1 ;
-        Date d2 ;
-
-        if (date1 == null || date2 == null || date1.isEmpty() || date2.isEmpty()){
-            return diff;
-        }
-
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
-        switch (dateForm){
-            case 0:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmmss", Locale.ROOT);
-                break;
-            case 1:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
-                break;
-            case 3:
-                simpleDateFormat = new SimpleDateFormat("yyMMddHHmm", Locale.ROOT);
-                break;
-            case 4:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT);
-                break;
-            case 5:
-                simpleDateFormat = new SimpleDateFormat("HH:mm", Locale.ROOT);
-                break;
-            case 6:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT);
-                break;
-            case 7:
-                simpleDateFormat = new SimpleDateFormat("yy-MM-dd", Locale.ROOT);
-                break;
-            case 8:
-                simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
-                break;
-        }
-
-        try {
-            d1 = simpleDateFormat.parse(date1);
-            d2 = simpleDateFormat.parse(date2);
-
-            // 毫秒ms
-            if (d2 != null && d1 != null) {
-                diff = d2.getTime() - d1.getTime();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return diff / 1000;
-    }
-
     /**
      * 返回美国时间格式 Thu. 02 Jul 2020
      *
-     * @param str
-     * @dataform
-     * @return
      */
     @SuppressLint("SimpleDateFormat")
-    public static String getEDate(String str, int dataform, boolean showWeek, boolean showTime, boolean showSec) {
+    static String getEDate(String str) {
         SimpleDateFormat formatter ;
-        switch (dataform){
-            case 0:
-                formatter = new SimpleDateFormat("yyMMddHHmmss");           //带时间的格式
-                break;
-            case 1:
-                formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");       //带时间的格式
-                break;
-            case 2:
-                formatter = new SimpleDateFormat("yy-MM-dd");               //不带时间的格式
-                break;
-            case 3:
-                formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");    //带时间的格式
-                break;
-            default:
-                formatter = new SimpleDateFormat("yyyy-MM-dd");
-        }
+
+        formatter = new SimpleDateFormat("yyMMddHHmmss");           //带时间的格式
 
         ParsePosition pos = new ParsePosition(0);
         Date strtodate = formatter.parse(str, pos);
@@ -300,7 +184,6 @@ public class ComTool {
         if (strtodate != null) {
             j = strtodate.toString();
         }
-        //Wed Jul 08 15:11:56 GMT+08:00 2020
 
         String[] k = new String[0];
         if (j != null) {
@@ -308,42 +191,21 @@ public class ComTool {
         }
 
         String retime = k[2] +" "+ k[1] +" "+ k[5].substring(0, 4);  //得到日期
-
-        if (showWeek)
-            retime = k[0] +"."+retime;
-
-        if (showTime)
-            retime = retime + " "+ k[3].substring(0, 5);
-
-        if (showTime && showSec)
-            retime = retime + ":";
-
-        if (showSec)
-            retime = retime + k[3].substring(6, 8);
-
+        retime = retime + " "+ k[3].substring(0, 5)+ ":"+ k[3].substring(6, 8);
         return retime;
     }
 
 
     /**
      * 生成 随机数
-     * @param count
-     * @param maxNum
-     * @param scale
-     * @return
      */
-    public static String getRndNumber(int count, int maxNum, int scale){
-        String imeiStr = "";
-        for (int i=0; i<count; i++){
+    static String getRndNumber(){
+        StringBuilder imeiStr = new StringBuilder();
+        for (int i=0; i<6; i++){
             Random rand = new Random();
-            int randNum = rand.nextInt(maxNum);
-
-            if (scale == 16){
-                imeiStr += Integer.toHexString(randNum);
-            }else {
-                imeiStr += randNum;
-            }
+            int randNum = rand.nextInt(9);
+            imeiStr.append(randNum);
         }
-        return imeiStr;
+        return imeiStr.toString();
     }
 }

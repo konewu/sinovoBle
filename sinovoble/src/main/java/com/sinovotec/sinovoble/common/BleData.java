@@ -482,14 +482,14 @@ public class BleData {
             Log.d(TAG,"绑定成功，blemac："+bleMac + ",bleSno:"+bleSno);
 
             //生成随机密码进行登录
-            String rndCode = ComTool.getRndNumber(6,9,10);
+            String rndCode = ComTool.getRndNumber();
             String data = bleSno + SinovoBle.getInstance().getPhoneIMEI() + rndCode;
             exeCommand("01", data, false);
             exeCommand("11", bleSno, false);     //查询锁的名称
             exeCommand("1a", bleSno, false);     //查询锁的固件版本
 
             //同步锁端的时间
-            String nowtime = ComTool.getSpecialTime("",1,1,0);
+            String nowtime = ComTool.getSpecialTime(1,0);
             nowtime = nowtime.replace(":","").replace(" ","").replace("-","");
             nowtime = nowtime.substring(2);
             data = bleSno + nowtime;
@@ -993,7 +993,7 @@ public class BleData {
             String locktime = datavalue.substring(0, len-2);
 
 //            Log.d(TAG,"得到锁端的时间："+locktime);
-            locktime = ComTool.getEDate(locktime, 0, false, true,true);   //转换时间格式
+            locktime = ComTool.getEDate(locktime);   //转换时间格式
             map.put("lockTime",locktime);
         }
 
@@ -1434,7 +1434,7 @@ public class BleData {
             map.put("baseTime", basetime);
         }
         if (errCode.equals("0a")){
-            String pre_basetime = ComTool.getSpecialTime("",0,1,-2);
+            String pre_basetime = ComTool.getSpecialTime(0,-2);
 //            Log.d(TAG,"还没设置基准时间，准备设置为："+ pre_basetime);
             String data = SinovoBle.getInstance().getLockSNO() +pre_basetime;
             exeCommand("1f",data,true);
