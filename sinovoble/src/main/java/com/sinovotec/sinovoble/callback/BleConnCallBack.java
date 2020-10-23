@@ -121,8 +121,13 @@ public class BleConnCallBack extends BluetoothGattCallback {
                                     Log.i(TAG, "Disconnecting from GATT server.");
                                 }
                             }else {
-                                Log.i(TAG, "连接状态出错，关闭gatt资源,重连尝试");
-                                BleConnCallBack.getInstance().disConectBle();
+                                Log.i(TAG, "连接状态出错，关闭gatt资源,重连尝试, 正在连接的："+ getConnectingMAC()+", 连接错误的："+ gatt.getDevice().getAddress());
+                                if (!gatt.getDevice().getAddress().equals(getConnectingMAC())){
+                                    Log.w(TAG, "连接丢失的mac地址是："+gatt.getDevice().getAddress() + "，当前正在连接的mac地址是："+getConnectingMAC() + ",不一致，不处理");
+                                }else{
+                                    Log.i(TAG, "连接状态出错，关闭gatt资源,断开连接");
+                                    BleConnCallBack.getInstance().disConectBle();
+                                }
                             }
                         }
 
@@ -341,13 +346,13 @@ public class BleConnCallBack extends BluetoothGattCallback {
                 Log.w(TAG, "绑定模式下。连接丢失后重连。mac:"+ SinovoBle.getInstance().getScanLockList().get(0).GetDevice().getAddress());
                 SinovoBle.getInstance().connectLock(SinovoBle.getInstance().getScanLockList().get(0));
             }
-
         }else {
             Log.e(TAG, "非绑定模式下，丢失的连接是："+ disconn_mac);
             if (!disconn_mac.equals(getConnectingMAC())){
                 Log.w(TAG, "连接丢失的mac地址是："+disconn_mac + "，当前正在连接的mac地址是："+getConnectingMAC() + ",不一致，不处理");
                 return;
             }
+            releaseBle();   //20201023
             SinovoBle.getInstance().getmConnCallBack().onDisconnect();
         }
     }
@@ -595,7 +600,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
         BleData.getInstance().getCommandList().clear();
 
         sendDataHandler.removeCallbacksAndMessages(null);    //取消发送数据定时检测的任务
-        //是否资源
+        //是否资源  20201023
         releaseBle();
 
         //非绑定模式下，连接断开才通知回调
@@ -610,12 +615,9 @@ public class BleConnCallBack extends BluetoothGattCallback {
      */
     public void releaseBle(){
         if (mBluetoothGatt!=null) {
-            refreshDeviceCache(mBluetoothGatt);
-            if (mBluetoothGatt != null) {
-                mBluetoothGatt.disconnect();
-                mBluetoothGatt.close();
-                mBluetoothGatt = null;
-            }
+            Objects.requireNonNull(mBluetoothGatt).disconnect();
+            Objects.requireNonNull(mBluetoothGatt).close();
+            mBluetoothGatt = null;
         }
     }
 

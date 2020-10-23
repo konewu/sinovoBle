@@ -67,7 +67,6 @@ public class SinovoBle {
     private IScanCallBack mBleScanCallBack;     //蓝牙扫描的回调
     private IConnectCallback mConnCallBack;     //蓝牙连接的回调
 
-    private int connectTimeout = 8*1000;        //连接超时检测，发起连接后，在超时的时间内得不到响应，则断开进行处理
     private int scanRepeatInterval = 6*1000;    //扫描间隔，开始扫描之后，间隔到指定时间，然后停止扫描，再重新开始扫描
 
     private  LoadLibJni myJniLib;
@@ -144,14 +143,6 @@ public class SinovoBle {
 
     public String getLockType() {
         return lockType;
-    }
-
-    public int getConnectTimeout() {
-        return connectTimeout;
-    }
-
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
     }
 
     public int getScanRepeatInterval() {
@@ -372,7 +363,7 @@ public class SinovoBle {
         startBleScan();
     }
 
-    public int  checkEnvir(){
+    public int checkEnvir(){
         if (!isConnected()){
             Log.e(TAG,"Bluetooth not connected");
             return 1;
@@ -915,11 +906,8 @@ public class SinovoBle {
                     SinovoBle.getInstance().connectBle(bleScanLock.GetDevice());
                 }
             }, 100);
-
-//        }else {
-//            Log.d(TAG, "不符合连接条件，getScanLockList()大小："+ SinovoBle.getInstance().getScanLockList().size()
-//                    +", isconnecting:"+ SinovoBle.getInstance().isConnectting() + " isConnected:"+ SinovoBle.getInstance().isConnected());
         }
+
     }
 
 
@@ -944,17 +932,14 @@ public class SinovoBle {
             return false;
         }
 
-        //add 20201016
-        BleConnCallBack.getInstance().releaseBle();
-
         SinovoBle.getInstance().setConnectting(true);       //标记 已经在开始进行连接
         BleConnCallBack.getInstance().setConnectingMAC(bluetoothDevice.getAddress());       //标记 当前准备连接的地址，以便后面断开进行重连
 
         //防止连接出现133错误, 不能发现Services
-        if (BleConnCallBack.getInstance().getmBluetoothGatt() != null ) {
-            Log.d(TAG, "connectDevice: closeGatt");
-            BleConnCallBack.getInstance().releaseBle();
-        }
+//        if (BleConnCallBack.getInstance().getmBluetoothGatt() != null ) {
+//            Log.w(TAG, "connectDevice: closeGatt");
+//            BleConnCallBack.getInstance().releaseBle();
+//        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             BleConnCallBack.getInstance().setmBluetoothGatt(bluetoothDevice.connectGatt(getContext(), false, BleConnCallBack.getInstance(), BluetoothDevice.TRANSPORT_LE));
