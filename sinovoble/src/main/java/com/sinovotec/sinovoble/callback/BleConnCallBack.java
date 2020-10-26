@@ -600,7 +600,6 @@ public class BleConnCallBack extends BluetoothGattCallback {
         BleData.getInstance().getCommandList().clear();
 
         sendDataHandler.removeCallbacksAndMessages(null);    //取消发送数据定时检测的任务
-        //是否资源  20201023
         releaseBle();
 
         //非绑定模式下，连接断开才通知回调
