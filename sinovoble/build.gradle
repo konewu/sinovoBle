@@ -44,4 +44,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation 'com.alibaba:fastjson:1.1.72.android'        //fastjson 解析库
 
+    implementation('com.aliyun.alink.linksdk:iot-linkkit:1.7.2')
+    implementation('com.aliyun.alink.linksdk:public-channel-core:0.7.7.1')
+
 }

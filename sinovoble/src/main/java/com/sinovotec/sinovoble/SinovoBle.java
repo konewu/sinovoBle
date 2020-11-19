@@ -817,6 +817,32 @@ public class SinovoBle {
         return 0;
     }
 
+    /**
+     * 用户授权
+     * @param codeType 密码类型
+     * @param code 密码
+     * @param username 准备生成的用户名称
+     */
+    public int authorOther(String codeType, String code, String username){
+        if (codeType.isEmpty() || code.isEmpty() || username.isEmpty()){
+            Log.e(TAG,"Parameter error");
+            return 2;
+        }
+
+        int result = checkEnvir();
+        if (result !=0){
+            return result;
+        }
+
+        //username 转换为 ascii码
+        String username_ascii = ComTool.stringToAscii(username);
+
+        Log.d(TAG,"字符串："+username + ", ascii:"+ username_ascii);
+        String data = SinovoBle.getInstance().getLockSNO() + codeType + code + username_ascii;
+        BleData.getInstance().exeCommand("26", data, true);
+        return 0;
+    }
+
 
     //用户取消了绑定
     public void cancelAddLock(){
@@ -938,11 +964,11 @@ public class SinovoBle {
         }
 
         //防止连接出现133错误, 不能发现Services
-        if (BleConnCallBack.getInstance().getmBluetoothGatt() != null ) {
-            Log.w(TAG, "connectDevice: closeGatt");
-            BleConnCallBack.getInstance().releaseBle();
-            return false;
-        }
+//        if (BleConnCallBack.getInstance().getmBluetoothGatt() != null ) {
+//            Log.w(TAG, "connectDevice: closeGatt");
+//            BleConnCallBack.getInstance().releaseBle();
+//            return false;
+//        }
 
         SinovoBle.getInstance().setConnectting(true);       //标记 已经在开始进行连接
         BleConnCallBack.getInstance().setConnectingMAC(bluetoothDevice.getAddress());       //标记 当前准备连接的地址，以便后面断开进行重连

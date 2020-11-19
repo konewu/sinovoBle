@@ -19,7 +19,6 @@ public class BleData {
     private static BleData instance;             //入口操作管理
     private boolean isExeCmding = false;          //是否正在执行命令
     private static String TAG = "SinovoBle";
-  //  private int cmdRetry = 0;
 
     public static BleData getInstance() {
         if (instance == null) {
@@ -297,6 +296,9 @@ public class BleData {
 
         //查看、设置超级用户权限
         if (funCode.equals("23")) {return checkSuperUser(datavalue);}
+
+        //授权新用户
+        if (funCode.equals("26")) {return authorOther(datavalue);}
         return map;
     }
 
@@ -1053,7 +1055,6 @@ public class BleData {
 
         if (errCode.equals("00")) {
             if (datavalue.length() <6){
-//                Log.d(TAG,"查询管理员密码失败，返回内容不合法："+datavalue);
                 return map;
             }
             String nid = datavalue.substring(0,2);
@@ -1192,8 +1193,6 @@ public class BleData {
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
-//        Log.d(TAG,"修改自动锁门时间的错误码："+errCode);
-
         if (errCode.equals("00")) {
             String datatime = datavalue.substring(0, 2);
             map.put("autoLockTime", datatime);
@@ -1229,7 +1228,6 @@ public class BleData {
         }
 
         if (len <14){
-//            Log.d(TAG, "同步过来的日志 格式不正确，不处理，退出");
             String errCode = datavalue.substring(len-2, len);
             map.put("errCode", errCode);
             return map;
@@ -1240,8 +1238,6 @@ public class BleData {
         String logDate  = datavalue.substring(4, 6) + "-" + datavalue.substring(6, 8) + "-" + datavalue.substring(8, 10);
         String logTime  = datavalue.substring(10, 12) + ":" + datavalue.substring(12, 14);
         String logCont  = datavalue.substring(14, len);
-
-//        Log.d(TAG, "同步过来的日志：id："+logID + " logType："+logType + " logDate:"+ logDate + " logTime:"+logTime + " logCont:"+ logCont);
 
         String userType = logCont.substring(0, 2);
         String openCont = logCont.substring(2);
@@ -1528,6 +1524,43 @@ public class BleData {
         if (errCode.equals("00")) {
             String enableAuto = datavalue.substring(0, 2);
             map.put("superUserLevel", enableAuto);
+        }
+
+        return map;
+    }
+
+
+    /**
+     * 授权新用户
+     * @param datavalue
+     * 0xFE 0x26  LEN  TYPE NID CODE username  ERR_CODE checksum
+     */
+    private LinkedHashMap authorOther(String datavalue){
+        int len = datavalue.length();
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        map.put("funCode", "26");
+
+        Log.d(TAG, "返回的内容："+ datavalue);
+        if (len<2){
+            map.put("errCode", "01");   //数据长度有误
+            return map;
+        }
+        String errCode = datavalue.substring(len-2, len);
+        map.put("errCode", errCode);   //数据长度有误
+        map.put("lockMac", SinovoBle.getInstance().getLockMAC());
+
+        if (errCode.equals("00")) {
+            String codeType = datavalue.substring(0, 2);
+            String nid = datavalue.substring(2, 4);
+            String code = datavalue.substring(4, 10);
+            String username = datavalue.substring(10, len-2);
+
+            Log.d(TAG, "返回的内容username ："+ username + ",转ASCII码："+ ComTool.asciiToString(username));
+
+            map.put("codeType", codeType);
+            map.put("userNID", nid);
+            map.put("code", code);
+            map.put("username", ComTool.asciiToString(username));
         }
 
         return map;

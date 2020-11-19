@@ -190,7 +190,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
                                 sendDataHandler.removeCallbacksAndMessages(null);    //取消定时任务
                             }
                             LinkedHashMap resultmap = BleData.getInstance().getDataFromBle(recvStr);
-//                            Log.d(TAG, "数据处理后的结果：" + JSON.toJSONString(resultmap));
+                            Log.d(TAG, "数据处理后的结果：" + JSON.toJSONString(resultmap));
 
                             JSONObject jsonObject =new JSONObject(resultmap);
                             afterReceiveData(jsonObject);
@@ -321,6 +321,8 @@ public class BleConnCallBack extends BluetoothGattCallback {
             return;
         }
 
+        releaseBle();   //20201023
+
         if (!SinovoBle.getInstance().getScanLockList().isEmpty()) {
             String scanDeviceMac0 = SinovoBle.getInstance().getScanLockList().get(0).GetDevice().getAddress();
             if (disconn_mac.equals(scanDeviceMac0)) {
@@ -352,7 +354,6 @@ public class BleConnCallBack extends BluetoothGattCallback {
                 Log.w(TAG, "连接丢失的mac地址是："+disconn_mac + "，当前正在连接的mac地址是："+getConnectingMAC() + ",不一致，不处理");
                 return;
             }
-            releaseBle();   //20201023
             SinovoBle.getInstance().getmConnCallBack().onDisconnect();
         }
     }
@@ -536,6 +537,11 @@ public class BleConnCallBack extends BluetoothGattCallback {
         //启用禁用 动态密码的 返回结果
         if (Objects.equals(funCode, "20")){
             SinovoBle.getInstance().getmConnCallBack().onDynamicCodeStatus(JSON.toJSONString(jsonObject));
+        }
+
+        //授权新用户
+        if (Objects.equals(funCode, "26")){
+            SinovoBle.getInstance().getmConnCallBack().onAuthorOther(JSON.toJSONString(jsonObject));
         }
 
     }

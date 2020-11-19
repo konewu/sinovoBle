@@ -139,6 +139,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
+        public void onAuthorOther(String result) {
+
+        }
+
+        @Override
         public void onReceiveDataFailed() {
 
         }

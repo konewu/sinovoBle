@@ -58,8 +58,10 @@ public interface IConnectCallback {
     //启用禁用 动态密码的返回结果
     void onDynamicCodeStatus(String result);
 
+    //授权新用户的返回结果
+    void onAuthorOther(String result);
+
     //发送数据没有回应
     void onReceiveDataFailed();
-
 
 }
