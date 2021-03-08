@@ -20,7 +20,7 @@ import static com.sinovotec.sinovoble.common.ComTool.getNowTime;
 
 public class BleScanCallBack extends ScanCallback {
     private static BleScanCallBack instance;                //入口操作管理
-    private static String TAG = "SinovoBle";
+    private static final String TAG = "SinovoBle";
     private boolean isScanning  = false;          //是否正在扫描
     IScanCallBack iScanCallBack;          //扫描结果回调
 
@@ -39,12 +39,10 @@ public class BleScanCallBack extends ScanCallback {
         isScanning = scanning;
     }
 
-
     /**
      * 单例方式获取蓝牙通信入口
      */
     public static BleScanCallBack getInstance(IScanCallBack scanCallBack) {
-
         if (instance != null){
             return  instance;
         }
@@ -67,20 +65,28 @@ public class BleScanCallBack extends ScanCallback {
 
                                 //尝试进行自动连接
                                 if (SinovoBle.getInstance().isBindMode()) {
-//                                    Log.w(TAG, "绑定模式下，自动进行连接："+bleScanDevice.GetDevice().getAddress());
-                                    SinovoBle.getInstance().connectLock(bleScanDevice);
+                                    Log.w(TAG, "绑定模式下，自动进行连接："+bleScanDevice.GetDevice().getAddress());
+                                    Log.w(TAG, "开始连接之前，先停止扫描");
+                                    SinovoBle.getInstance().setScanAgain(false);
+                                    BleScanCallBack.getInstance(iScanCallBack).stopScan();
+                                    SinovoBle.getInstance().connectBle(bleScanDevice.GetDevice());
                                 }else {
-                                    for (int j=0; j<SinovoBle.getInstance().getAutoConnectList().size(); j++){
-                                        String mac = SinovoBle.getInstance().getAutoConnectList().get(j).getLockMac();
-//                                        Log.w(TAG, "读取自动连接列表中的锁mac地址："+ mac + "，扫描到的地址："+bleScanDevice.GetDevice().getAddress());
+                                    Log.w(TAG, "非绑定模式下，getToConnectLockList size："+ SinovoBle.getInstance().getToConnectLockList().size());
+                                    for (BleConnectLock bleConnectLock : SinovoBle.getInstance().getToConnectLockList()){
+                                        String mac = bleConnectLock.getLockMac();
+                                        Log.w(TAG,"lockmac:"+ mac + ",ble mac:"+ bleScanDevice.GetDevice().getAddress());
                                         if (bleScanDevice.GetDevice().getAddress().equals(mac)){
-//                                            Log.w(TAG, "非绑定模式下，扫描到的地址存在自动连接中 ，现在开始连接");
-                                            SinovoBle.getInstance().connectLock(bleScanDevice);
+
+                                            Log.w(TAG, "开始进行之前，先停止扫描");
+                                            SinovoBle.getInstance().setScanAgain(false);
+                                            BleScanCallBack.getInstance(iScanCallBack).stopScan();
+
+                                            Log.w(TAG, "开始进行自动连接:"+ bleScanDevice.GetDevice().getAddress());
+                                            SinovoBle.getInstance().connectBle(bleScanDevice.GetDevice());
                                             break;
                                         }
                                     }
                                 }
-//                                Log.w(TAG, "扫描到符合条件锁，回调通知客户："+bleScanDevice.GetDevice().getAddress());
                                 break;
                             }
                         }
@@ -142,34 +148,51 @@ public class BleScanCallBack extends ScanCallback {
 
                 //如果广播包内容为空，旧的lock,需要兼容
                 if (manufacturerData == null || manufacturerData.length ==0){
+                    Log.i(TAG, "锁" +scanLockMac +" 广播包内容为空，或是长度为0，兼容旧版本，允许连接它");
                     deviceIn = true;
                 }else {
                     String advData = byte2hex(manufacturerData);
-
                     //兼容第二批 旧锁
-                    if (advData.length() > 14){
-                        String advtype = advData.substring(0, 2);
-                        if (advtype.equals("01")) {     //01，第二批出的锁，广播的是 锁id
-                            String adLockid = advData.substring(2, 14);
-                            if (!adLockid.equals(SinovoBle.getInstance().getLockID())) {
-                                deviceIn = false;
-                                Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
-                            }
-                        }else if (advtype.equals("02")){        //兼容第二批， 02 表示是广播的日志
-                            deviceIn = true;
+                    if (advData.length() >= 12){
+                        String adLockid = advData.substring(0, 12);
+                        if (adLockid.equals(SinovoBle.getInstance().getLockID())) {
+                            Log.w(TAG, "Adv_data's lockID:" + adLockid + " is matches the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,connect and stop scan");
+                            SinovoBle.getInstance().setScanAgain(false);
+                            BleScanCallBack.getInstance(iScanCallBack).stopScan();
                         }else {
-                            String adLockid = advData.substring(0, 12);
-                            if (!adLockid.equals(SinovoBle.getInstance().getLockID())) {
+                            String advtype = advData.substring(0, 2);
+
+                            if (advtype.equals("02")){        //兼容第二批， 02 表示是广播的日志
+                                Log.w(TAG, "兼容第二批就锁，广播包为02开头，运行加入" + advData );
+                            }else if (advtype.equals("01")) {
+                                if (advData.length() >= 14){
+                                    adLockid = advData.substring(2, 14);
+                                    if (adLockid.equals(SinovoBle.getInstance().getLockID())) {
+                                        Log.w(TAG, "Adv_data's lockID:" + adLockid + " is matches the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,connect and stop scan");
+                                        SinovoBle.getInstance().setScanAgain(false);
+                                        BleScanCallBack.getInstance(iScanCallBack).stopScan();
+                                    }else {
+                                        deviceIn = false;
+                                        Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+                                    }
+                                }else {
+                                    deviceIn = false;
+                                    Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
+                                }
+                            }else {
                                 deviceIn = false;
                                 Log.w(TAG, "Adv_data's lockID:" + adLockid + " is different from the lockID(" + SinovoBle.getInstance().getLockID() + ") entered by user,ignore");
                             }
                         }
+                    }else {
+                        Log.i(TAG, "锁" +scanLockMac +" 存在广播包，但长度小于14，不合法，不连接他");
+                        deviceIn = false;
                     }
                 }
             }else {     //非绑定模式下，对比mac地址即可
                 deviceIn = false;   //默认不符合加入
-                for (int i = 0; i< SinovoBle.getInstance().getAutoConnectList().size(); i++){
-                    BleConnectLock myConnectLock = SinovoBle.getInstance().getAutoConnectList().get(i);
+                for (int i = 0; i< SinovoBle.getInstance().getToConnectLockList().size(); i++){
+                    BleConnectLock myConnectLock = SinovoBle.getInstance().getToConnectLockList().get(i);
                     if (myConnectLock.getLockMac().equals(scanLockMac)){
                         Log.d(TAG,"该设备是需要自动连接的设备："+ scanLockMac);
                         deviceIn = true;
@@ -201,7 +224,6 @@ public class BleScanCallBack extends ScanCallback {
     //停止蓝牙扫描
     //参数 ，是否立即停止（自动扫描的话，停止之后会判断 是否还需要重新扫描）
     public void stopScan() {
-//        Log.d(TAG, "stopscanBle 函数，停止扫描  stopScan");
         setScanning(false);
         SinovoBle.getInstance().removeScanHandlerMsg();
 
@@ -217,12 +239,9 @@ public class BleScanCallBack extends ScanCallback {
 
         SinovoBle.getInstance().getBluetoothAdapter().getBluetoothLeScanner().stopScan(instance);
         if (SinovoBle.getInstance().isScanAgain()) {
-            SinovoBle.getInstance().getScanBleHandler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "start to scan again after 1s");
-                    SinovoBle.getInstance().bleScan(iScanCallBack);
-                }
+            SinovoBle.getInstance().getScanBleHandler().postDelayed(() -> {
+                Log.d(TAG, "start to scan again after 1s");
+                SinovoBle.getInstance().bleScan(iScanCallBack);
             }, 1000);
         }
     }

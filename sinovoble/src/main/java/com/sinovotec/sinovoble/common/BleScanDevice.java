@@ -37,8 +37,4 @@ public class BleScanDevice {
         return joinTime;
     }
 
-//    public void setJoinTime(String joinTime) {
-//        this.joinTime = joinTime;
-//    }
-
 }

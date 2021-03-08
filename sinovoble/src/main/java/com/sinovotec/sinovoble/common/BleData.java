@@ -10,15 +10,17 @@ import java.util.UUID;
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.BleConnCallBack;
 
+//import static com.sinovotec.sinovoble.common.Aes128.decryptData;
+//import static com.sinovotec.sinovoble.common.Aes128.encryptData;
 import static com.sinovotec.sinovoble.common.ComTool.asciiToString;
 import static com.sinovotec.sinovoble.common.ComTool.toByte;
 
 public class BleData {
 
-    private LinkedList<String> commandList = new LinkedList<>();      //所有需要执行的命令 都放入到list中排队 ，等待执行
-    private static BleData instance;             //入口操作管理
+    private final LinkedList<String> commandList = new LinkedList<>();      //所有需要执行的命令 都放入到list中排队 ，等待执行
+    private static BleData instance;              //入口操作管理
     private boolean isExeCmding = false;          //是否正在执行命令
-    private static String TAG = "SinovoBle";
+    private static final String TAG = "SinovoBle";
 
     public static BleData getInstance() {
         if (instance == null) {
@@ -60,14 +62,13 @@ public class BleData {
      * @param data  待计算的命令
      * @return   计算出来的checksum值, 需要注意，计算出来的结果 需要取最后两位数字
      */
-    private static String checkSum(String data){
+    public  String checkSum(String data){
         int checksum = 0;    //计算校验和
 
         String returnStr = "";
 
         for (int i=0; i< data.length(); ){
             if (i+2 > data.length()){
-//                Log.d(TAG, "要进行计算的子字符串超过了 数组的大小，异常了， i+2："+(i+2) + "字符串大小："+data.length());
                return "";   //计算错误，
             }
             String sub_str = data.substring(i, i + 2);
@@ -117,22 +118,14 @@ public class BleData {
      * 返回 errCode 为 -5 ，解密数据异常
      * 返回 errCode 为 -6 ，有效数据长度超过16个字节
      */
-    public LinkedHashMap getDataFromBle(String data){
-        Log.d(TAG, "getDataFromBle 接收的数据："+data);
+    public LinkedHashMap getDataFromBle(String data, String mac){
+        Log.d(TAG, "receive data from ble:"+data + "，lock's address:" + mac);
 
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("getData", "0");
 
-        //非20字节的数据不处理
-        if (data.length() !=40){
-//            Log.d(TAG, "数据长度不为40，不是20字节，不处理");
-            map.put("errCode", "-1");
-            return map;
-        }
-
         //1、先检验checksum 是否ok
         if (!checkSumIsOK(data)){
-//            Log.d(TAG, "checksum 校验失败，直接退出");
             map.put("errCode", "-2");
             return map;
         }
@@ -140,14 +133,12 @@ public class BleData {
         //2、检测是否为fe开头的数据，非fe、fc开头则先不处理
         String headCode = data.substring(0,2);
         if (!(headCode.equals("fe") || headCode.equals("fc"))){
-//            Log.d(TAG, "ble发送过来数据包头部不是fe、fc，非法数据不处理");/
             map.put("errCode", "-3");
             return map;
         }
 
         String funcodebt = data.substring(2,4);
         if (funcodebt.equals("27")){
-//            Log.d(TAG, "锁端发送功能码为27的推送数据，暂时无需处理此数据");
             map.put("errCode", "-4");
             return map;
         }
@@ -164,17 +155,23 @@ public class BleData {
                 setExeCmding(false);
                 Log.d(TAG, "正在同步，需要同步完成才能执行下一个命令");
             }else {
-              if (funcodebt.equals(funcodelist) || (funcodebt.equals("14") && funcodelist.equals("13")) || funcodebt.equals("18") && funcodelist.equals("17")) {
-                  Log.d(TAG, "确认过眼神，就是你了，现在可删除");
+              if (funcodebt.equals(funcodelist) || (funcodebt.equals("14") && funcodelist.equals("13"))
+                      || funcodebt.equals("18") && funcodelist.equals("17")) {
+                //  Log.d(TAG, "确认过眼神，就是你了，现在可删除");
                   getCommandList().removeFirst();
                   setExeCmding(false);
-                  sendDataToBle();
+
+                  if (SinovoBle.getInstance().isBleConnected()) {
+                  //    Log.d(TAG, "蓝牙连接，通过蓝牙发送数据");
+                      sendDataToBle();
+                  }
               }else {
                   Log.e(TAG,"命令对不上：锁端发过来的："+funcodebt + ",本地命令队列中的："+ funcodelist + "，可以处理此数据，但不自动执行下一条命令，也不删除队列的命令");
               }
             }
-
         }
+
+        Log.d(TAG, "准备进行解密 接收到的密文：" + data + ",解密的mac：" + mac.toUpperCase());
 
         //3、获取出来功能码 , 并进行解密处理
         String funCode = data.substring(2,4);
@@ -183,12 +180,12 @@ public class BleData {
 
         //非绑定功能的数据，需要解密
         if (!funCode.equals("00")){
-          //  dataDecode = Aes128.decryptData(dataEncrypt, SinovoBle.getInstance().getLockMAC());
-            String mac = SinovoBle.getInstance().getLockMAC().replace(":","");
-            dataDecode = SinovoBle.getInstance().getMyJniLib().decryptAes(dataEncrypt, mac);
+            dataDecode = SinovoBle.getInstance().getMyJniLib().decryptAes(dataEncrypt, mac.toUpperCase());
         }else {
             dataDecode = dataEncrypt;
         }
+
+        Log.d(TAG, "解密后的内容：" +dataDecode);
 
         //异常情况，解密为空
         if (dataDecode.isEmpty()){
@@ -299,6 +296,9 @@ public class BleData {
 
         //授权新用户
         if (funCode.equals("26")) {return authorOther(datavalue);}
+
+        //查询锁是否被冻结，锁死了（连续5次开门失败）
+        if (funCode.equals("2b")) {return lockIsFrozen(datavalue);}
         return map;
     }
 
@@ -316,17 +316,25 @@ public class BleData {
         int byteLen = data.length() /2;
         byteLen += data.length() %2;
 
+        if (byteLen <3){
+            Log.d(TAG, "数据包的内容异常，至少有3个字节才可以");
+            return;
+        }
+
         //如果data 不够16字节，则在后面补ff
         for (int i=32;i> data.length(); i--) {
             data_send.append("f");
         }
-        Log.d(TAG, "需要发送的数据，在补f之后："+data_send + ",长度："+data_send.length());
+        Log.d(TAG, "exeCommand 需要发送的数据，在补f之后："+data_send + ",长度："+data_send.length());
 
         //加密处理
-        if (!funcode.equals("00")){
-            String mac = SinovoBle.getInstance().getLockMAC().replace(":","");
-            data_send = new StringBuilder(SinovoBle.getInstance().getMyJniLib().encryptAes(data_send.toString(), mac));
-            //data_send = encryptData(data_send, SinovoBle.getInstance().getLockMAC());
+        if (!funcode.equals("00") && SinovoBle.getInstance().getLockMAC() !=null){
+            String lockmac = SinovoBle.getInstance().getLockMAC().replace(":","");
+            Log.d(TAG, "准备加密的mac："+lockmac);
+            data_send = new StringBuilder(SinovoBle.getInstance().getMyJniLib().encryptAes(data_send.toString(), lockmac));
+//            Log.d(TAG, "加密的结果so："+data_send);
+          //  data_send2 = new StringBuilder(encryptData(data_send.toString(), lockmac));
+//            Log.d(TAG, "加密的结果2："+encryptData(data_send.toString(), lockmac.toLowerCase()));
         }
 
         Log.d(TAG, "需要发送的数据，加密后："+data_send);
@@ -337,10 +345,6 @@ public class BleData {
         }else {
             data_result = data_result + Integer.toHexString(byteLen) + data_send;
         }
-
-//        data_result = data_result + data_result+ data_result+ data_result+ data_result+data_result + data_result+ data_result+ data_result+ data_result +data_result + data_result+ data_result+ data_result;
-//        data_result = "fe1203453d3534921c6acd0461c06b8685fe1203453d3534921c6acd0461c06b0ebf8685fe1203453d3534921c6acd0461c06b0ebf8685fe1203453d3534921c6acd0461c06b0ebf8685fe1203453d3534921c6acd0461c06b0ebf8685fe1203453d3534921c6acd0461c06b0ebf8685fe1203453d3534921c6acd04634532";
-//        Log.d(TAG,"加大内容试试：" + data_result);
 
         data_result = data_result +checkSum(data_result);
 
@@ -362,9 +366,13 @@ public class BleData {
 
         //如果当前没有正在执行命令
         if (!isExeCmding()){
-            if (SinovoBle.getInstance().isBindMode() || (!SinovoBle.getInstance().isBindMode() && SinovoBle.getInstance().isConnected())){
-                Log.d(TAG, "连接成功，且状态为非正在发送命令的状态，可以发送命令");
-                sendDataToBle();
+            if (SinovoBle.getInstance().getConnType() == 0 || SinovoBle.getInstance().isBleConnected() || SinovoBle.getInstance().isBindMode()) {
+                if (SinovoBle.getInstance().isBindMode() || (!SinovoBle.getInstance().isBindMode() && SinovoBle.getInstance().isBleConnected())) {
+                    Log.d(TAG, "连接成功，且状态为非正在发送命令的状态，可以发送命令");
+                    sendDataToBle();
+                }
+            }else {
+                Log.d(TAG, "采用wifi连接，通过mqtt 发送命令");
             }
         }else {
             Log.e(TAG, "当前正在执行命令。忽略，不执行");
@@ -387,22 +395,14 @@ public class BleData {
             return;
         }
 
-        Log.d(TAG,"bledata 发送指令："+getCommandList().getFirst());
-
+        Log.d(TAG,"bledata 发送指令："+getCommandList().getFirst() + ", 发送方式："+ SinovoBle.getInstance().getConnType());
         setExeCmding(true);
         final  byte[] write_msg_byte = toByte(getCommandList().getFirst());
+        if (SinovoBle.getInstance().getBleServiceUUID() != null && SinovoBle.getInstance().getBlecharacteristUUID() != null ){
+            final UUID uuid_service = UUID.fromString(SinovoBle.getInstance().getBleServiceUUID());
+            final UUID uuid_characterics = UUID.fromString(SinovoBle.getInstance().getBlecharacteristUUID());
 
-        SinovoBle sinovoBle = SinovoBle.getInstance();
-        if (sinovoBle.getBleServiceUUID() != null && sinovoBle.getBlecharacteristUUID() != null ){
-            final UUID uuid_service = UUID.fromString(sinovoBle.getBleServiceUUID());
-            final UUID uuid_characterics = UUID.fromString(sinovoBle.getBlecharacteristUUID());
-
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    BleConnCallBack.getInstance().writeCharacteristic(write_msg_byte, uuid_service, uuid_characterics);
-                }
-            }, 200);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> BleConnCallBack.getInstance().writeCharacteristic(write_msg_byte, uuid_service, uuid_characterics), 200);
 
         }else {
             Log.d(TAG,"UUID 为空，异常了,断开连接");
@@ -442,7 +442,6 @@ public class BleData {
         }
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
-//        Log.d(TAG,"手机绑定的错误码："+errCode);
 
         //绑定成功
         if (errCode.equals("00") || errCode.equals("0b")){
@@ -460,15 +459,13 @@ public class BleData {
             //绑定成功后，取消绑定超时检测
             SinovoBle.getInstance().getBindTimeoutHandler().removeCallbacksAndMessages(null);
 
-            String bleMac = datavalue.substring(0,12);
+            String bleMac = datavalue.substring(0,12).toUpperCase();
             String bleSno = datavalue.substring(12,18);
 
             SinovoBle.getInstance().setConnected(true);
             SinovoBle.getInstance().setLockMAC(bleMac);
             SinovoBle.getInstance().setLockSNO(bleSno);
 
-            //清空自动连接的列表，或许断开只能重连它，不能连接其他设备，除非手动切换
-            SinovoBle.getInstance().getAutoConnectList().clear();
             StringBuilder lockMac = new StringBuilder();
             for (int j=0;j<bleMac.length();){
                 if (j < bleMac.length() - 2) {
@@ -478,8 +475,10 @@ public class BleData {
                 }
                 j = j + 2;
             }
-            BleConnectLock myAutoConnectLock = new BleConnectLock(lockMac.toString().toUpperCase(), bleSno);
-            SinovoBle.getInstance().getAutoConnectList().add(myAutoConnectLock);
+            //清空自动连接的列表，或许断开只能重连它，不能连接其他设备，除非手动切换
+            SinovoBle.getInstance().getToConnectLockList().clear();
+            BleConnectLock myAutoConnectLock = new BleConnectLock(lockMac.toString(), bleSno);
+            SinovoBle.getInstance().getToConnectLockList().add(myAutoConnectLock);
 
             Log.d(TAG,"绑定成功，blemac："+bleMac + ",bleSno:"+bleSno);
 
@@ -552,6 +551,7 @@ public class BleData {
                 map.put("codeType", type);
                 map.put("codeID", codeid);
                 map.put("code", password);
+
                 return map;
             }
         }else {
@@ -577,7 +577,6 @@ public class BleData {
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
-//        Log.d(TAG,"添加用户的返回的错误码："+errCode);
 
         if (errCode.equals("00")) {
             String nid  = datavalue.substring(0, 2);
@@ -585,7 +584,6 @@ public class BleData {
             username = ComTool.asciiToString(username);
             map.put("userNid", nid);
             map.put("username",username);
-//            Log.d(TAG,"添加用户成功， nid："+ nid +",用户名："+ username);
         }
         return map;
     }
@@ -650,8 +648,6 @@ public class BleData {
             String type = datavalue.substring(2, 4);
             String sid  = datavalue.substring(4, 6);
             String data = datavalue.substring(6, len-2);
-
-//            Log.d(TAG,"创建数据成功，返回内容 nid："+ nid + ", type:"+ type + ", sid:" + sid +", data:" + data);
 
             if (type.equals("01")||type.equals("02")||type.equals("03") || type.equals("05")){
                 data = data.replace("f","");
@@ -767,7 +763,6 @@ public class BleData {
 //        Log.d(TAG,"登录 密码验证的错误码："+errCode);
 
         if (errCode.equals("00")) {
-
             if (datavalue.length() <6){
 //                Log.d(TAG,"密码验证,登录失败，返回内容不合法："+datavalue);
                 return map;
@@ -864,8 +859,6 @@ public class BleData {
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
-//        Log.d(TAG,"清空数据的错误码："+errCode);
-
         if (errCode.equals("00")) {
             String dataType = datavalue.substring(0, 2);
             map.put("dataType", dataType);
@@ -907,8 +900,6 @@ public class BleData {
             map.put("codeType", codetype);
             map.put("sid", sid);
             map.put("code", code);
-
-//            Log.d(TAG,"修改的结果，修改的nid:"+nid + ",TYPE:"+codetype + ",SID:"+sid + ",code:"+code);
         }
         return map;
     }
@@ -993,8 +984,6 @@ public class BleData {
 
         if (errCode.equals("00")) {
             String locktime = datavalue.substring(0, len-2);
-
-//            Log.d(TAG,"得到锁端的时间："+locktime);
             locktime = ComTool.getEDate(locktime);   //转换时间格式
             map.put("lockTime",locktime);
         }
@@ -1050,8 +1039,6 @@ public class BleData {
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
-
-//        Log.d(TAG,"查询管理员是否存在的错误码："+errCode);
 
         if (errCode.equals("00")) {
             if (datavalue.length() <6){
@@ -1299,7 +1286,6 @@ public class BleData {
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
-//        Log.d(TAG,"日志同步结束的错误码："+errCode);
         return map;
     }
 
@@ -1320,7 +1306,6 @@ public class BleData {
         }
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
-//        Log.d(TAG,"查看固件版本号的错误码："+errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
         if (errCode.equals("00")) {
@@ -1367,8 +1352,6 @@ public class BleData {
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
-//        Log.d(TAG,"蓝牙绑定删除的错误码："+errCode);
-
         if (errCode.equals("00")) {
             String delID = datavalue.substring(0, len-2);   //id为 ff 时表示清空所有绑定
             map.put("dataType", "0e");
@@ -1396,8 +1379,6 @@ public class BleData {
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
 
-//        Log.d(TAG,"查询/设置静音模式的错误码："+errCode);
-
         if (errCode.equals("00")) {
             String enableAuto = datavalue.substring(0, 2);
             map.put("enable", enableAuto);
@@ -1422,16 +1403,13 @@ public class BleData {
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
-//        Log.d(TAG,"查看/设置基准时间的错误码："+errCode);
 
         if (errCode.equals("00")) {
             String basetime = datavalue.substring(0, 12);
-//            Log.d(TAG,"获得到锁端的基准时间：" + basetime);
             map.put("baseTime", basetime);
         }
         if (errCode.equals("0a")){
             String pre_basetime = ComTool.getSpecialTime(0,-2);
-//            Log.d(TAG,"还没设置基准时间，准备设置为："+ pre_basetime);
             String data = SinovoBle.getInstance().getLockSNO() +pre_basetime;
             exeCommand("1f",data,true);
         }
@@ -1456,14 +1434,11 @@ public class BleData {
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
-//        Log.d(TAG,"启用/禁用 分享密码的错误码："+errCode);
 
         if (errCode.equals("00")) {
             String status       = datavalue.substring(0, 2);
             String sharedCode   = datavalue.substring(2, len-2);
             sharedCode = sharedCode.replace("f","");
-//            Log.d(TAG,"分享密码【"+sharedCode+"】的状态：" + status);
-
             map.put("codeStatus", status);
             map.put("sharedCode", sharedCode);
         }
@@ -1492,7 +1467,6 @@ public class BleData {
             String lockMAC       = datavalue.substring(0, 12);
             lockMAC = macWithColon(lockMAC).toUpperCase();
             if (!SinovoBle.getInstance().getLockMAC().equals(lockMAC)){
-//                Log.d(TAG,"原mac："+SinovoBle.getInstance().getLockMAC() + ",锁端返回的mac："+lockMAC+"不一致，需要更新");
                 SinovoBle.getInstance().setLockMAC(lockMAC);
             }
             map.put("lockMac", SinovoBle.getInstance().getLockMAC());
@@ -1518,8 +1492,6 @@ public class BleData {
         String errCode = datavalue.substring(len-2, len);
         map.put("errCode", errCode);   //数据长度有误
         map.put("lockMac", SinovoBle.getInstance().getLockMAC());
-
-//        Log.d(TAG,"查询/设置超级用户权限的错误码："+errCode);
 
         if (errCode.equals("00")) {
             String enableAuto = datavalue.substring(0, 2);
@@ -1566,6 +1538,37 @@ public class BleData {
         return map;
     }
 
+    /**
+     * 查询锁是否被锁死，冻结了，连续5次开门失败，则冻结锁3分钟
+     * @param datavalue
+     * 0xFE 0x2b  LEN  enable checksum
+     */
+    private LinkedHashMap lockIsFrozen(String datavalue){
+        int len = datavalue.length();
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        map.put("funCode", "2b");
+
+        Log.d(TAG, "返回的内容："+ datavalue);
+        if (len<2){
+            map.put("errCode", "01");   //数据长度有误
+            return map;
+        }
+
+        String errCode = "00";
+        if (len > 2){
+            errCode = datavalue.substring(len-2, len);
+        }
+        map.put("errCode", errCode);   //数据长度有误
+        map.put("lockMac", SinovoBle.getInstance().getLockMAC());
+
+        if (errCode.equals("00")) {
+            String enable = datavalue.substring(0, 2);
+            map.put("enable", enable);
+        }
+
+        return map;
+    }
+
 
     /**
      * 转换mac地址，将 00A051F4DC4C转换为00:A0:51:F4:DC:4C
@@ -1583,6 +1586,41 @@ public class BleData {
         }
 
         return lockMac.toString().toUpperCase();
+    }
+
+
+    /**
+     * 将指令进行加密
+     * @param funcode
+     * @param data
+     */
+    public String  getDataToEnctrypt(String funcode, String data, String mac){
+        StringBuilder data_send = new StringBuilder(data);
+        int byteLen = data.length() /2;
+        byteLen += data.length() %2;
+
+        //如果data 不够16字节，则在后面补ff
+        for (int i=32;i> data.length(); i--) {
+            data_send.append("f");
+        }
+        Log.d(TAG, "getDataToEnctrypt 需要发送的数据，在补f之后："+data_send + ",长度："+data_send.length());
+
+        Log.d(TAG, "准备加密的mac："+mac);
+        data_send = new StringBuilder(SinovoBle.getInstance().getMyJniLib().encryptAes(data_send.toString(), mac));
+//        data_send = new StringBuilder(encryptData(data_send.toString(), mac));
+
+        Log.d(TAG, "需要发送的数据，加密后："+data_send);
+
+        String data_result = "fe" +funcode ;
+        if (byteLen<16){
+            data_result = data_result + "0"+ Integer.toHexString(byteLen) + data_send;
+        }else {
+            data_result = data_result + Integer.toHexString(byteLen) + data_send;
+        }
+
+        data_result = data_result +checkSum(data_result);
+
+        return data_result;
     }
 
 }

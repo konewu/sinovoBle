@@ -17,7 +17,7 @@ public interface IConnectCallback {
     void onBluetoothOn();
 
     //连接断开
-    void onDisconnect();
+    void onDisconnect(String macaddress);
 
     //添加锁
     void onAddLock(String result);
@@ -60,6 +60,9 @@ public interface IConnectCallback {
 
     //授权新用户的返回结果
     void onAuthorOther(String result);
+
+    //锁锁死的返回
+    void onLockFrozen(String result);
 
     //发送数据没有回应
     void onReceiveDataFailed();

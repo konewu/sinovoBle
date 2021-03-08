@@ -3,7 +3,6 @@ package com.sinovotec.sinovobledemo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -11,7 +10,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.alibaba.fastjson.JSONObject;
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.IConnectCallback;
 import com.sinovotec.sinovoble.callback.IScanCallBack;
@@ -25,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 扫描回调
      */
-    private IScanCallBack mBleScanCallBack = new IScanCallBack() {
+    private final IScanCallBack mBleScanCallBack = new IScanCallBack() {
         @Override
         public void onDeviceFound(String scanResult) {
             Log.w("xxx", "onDeviceFound:" + scanResult);
@@ -42,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 连接回调
      */
-    private IConnectCallback mConnCallBack = new IConnectCallback() {
+    private final IConnectCallback mConnCallBack = new IConnectCallback() {
 
         @Override
         public void onConnectSuccess(String macAddress) {
@@ -66,8 +64,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onDisconnect() {
-            Log.i("xxx","连接回调 IConnectCallback 连接断开");
+        public void onDisconnect(String macaddress) {
 
         }
 
@@ -144,6 +141,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
+        public void onLockFrozen(String result) {
+
+        }
+
+        @Override
         public void onReceiveDataFailed() {
 
         }
@@ -161,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         Button chkp = findViewById(R.id.btn_chkpower);
 
         final EditText myet = findViewById(R.id.lockid_et);
-        final EditText usernameet = findViewById(R.id.username_et);
+       // final EditText usernameet = findViewById(R.id.username_et);
         reslut_tv = findViewById(R.id.result_tv);
 
         newbtn.setOnClickListener(new View.OnClickListener() {
