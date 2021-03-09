@@ -324,7 +324,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
             Log.e(TAG, "非绑定模式下，丢失的连接是："+ disconn_mac);
             if (!SinovoBle.getInstance().getToConnectLockList().isEmpty()){
                 if (SinovoBle.getInstance().getConnectingMac().equals(disconn_mac)){
-                    SinovoBle.getInstance().getmConnCallBack().onDisconnect(disconn_mac);
+                    SinovoBle.getInstance().getmConnCallBack().onBleDisconnect(disconn_mac);
                 }else {
                     Log.w(TAG, "连接丢失的mac地址是："+disconn_mac + "，当前正在连接的mac地址是："+SinovoBle.getInstance().getConnectingMac() + ",不一致，不处理");
                 }
@@ -578,7 +578,7 @@ public class BleConnCallBack extends BluetoothGattCallback {
         //非绑定模式下，连接断开才通知回调
         if (!SinovoBle.getInstance().isBindMode()) {
             //Log.w(TAG,"非绑定模式，连接断开，通知上层 回调");
-            SinovoBle.getInstance().getmConnCallBack().onDisconnect(SinovoBle.getInstance().getLockMAC());
+            SinovoBle.getInstance().getmConnCallBack().onBleDisconnect(SinovoBle.getInstance().getLockMAC());
         }
     }
 

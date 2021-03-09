@@ -4,16 +4,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.sinovotec.mqtt.MqttLib;
 import com.sinovotec.sinovoble.SinovoBle;
 import com.sinovotec.sinovoble.callback.IConnectCallback;
 import com.sinovotec.sinovoble.callback.IScanCallBack;
 import com.sinovotec.sinovoble.common.BleConnectLock;
+import com.sinovotec.mqtt.iotMqttCallback;
 
 import java.util.ArrayList;
 
@@ -53,6 +54,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
+        public void onBleDisconnect(String macaddress) {
+
+        }
+
+        @Override
         public void onBluetoothOff() {
             Log.e("xxx","手机蓝牙被关闭了");
         }
@@ -64,9 +70,45 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onDisconnect(String macaddress) {
+        public void onConnectedViaWifi(String wifiSSID) {
 
         }
+
+        @Override
+        public void onConnectedViaMobile() {
+
+        }
+
+        @Override
+        public void onInternetDisconned() {
+
+        }
+
+        @Override
+        public void onFaildGetInternetInfo() {
+
+        }
+
+        @Override
+        public void onWifiOn() {
+
+        }
+
+        @Override
+        public void onWifiOff() {
+
+        }
+
+        @Override
+        public void onScreenOn() {
+
+        }
+
+        @Override
+        public void onScreenOff() {
+
+        }
+
 
         @Override
         public void onAddLock(String result) {
@@ -152,6 +194,88 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
+    //mqtt的 回调
+    private final iotMqttCallback mqttCallback = new iotMqttCallback() {
+        @Override
+        public void initFailed() {
+
+        }
+
+        @Override
+        public void onConnectionLost() {
+
+        }
+
+        @Override
+        public void onMsgArrived(String topic, String msg) {
+
+        }
+
+        @Override
+        public void onDeliveryComplete() {
+
+        }
+
+        @Override
+        public void onConnectSuccess() {
+
+        }
+
+        @Override
+        public void onConnectFailed() {
+
+        }
+
+        @Override
+        public void onSubscribeSuccess() {
+
+        }
+
+        @Override
+        public void onSubscribeFailed() {
+
+        }
+
+        @Override
+        public void onPublishSuccess() {
+
+        }
+
+        @Override
+        public void onPublishFailed() {
+
+        }
+
+        @Override
+        public void onReceiveMQTTTimeout() {
+
+        }
+
+        @Override
+        public void onReceiveBLETimeout() {
+
+        }
+
+        @Override
+        public void onUdpReceiveMsg(String msg) {
+
+        }
+
+        @Override
+        public void onUdpSendFailed(String msg) {
+
+        }
+
+        @Override
+        public void onTcpReceiveMsg(String msg) {
+
+        }
+
+        @Override
+        public void onTcpSendFailed(String msg) {
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,36 +290,28 @@ public class MainActivity extends AppCompatActivity {
        // final EditText usernameet = findViewById(R.id.username_et);
         reslut_tv = findViewById(R.id.result_tv);
 
-        newbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (myet.getText().length() !=12){
-                    Toast.makeText(getApplicationContext(),"LOCKID can only be a 12 bit number",Toast.LENGTH_LONG).show();
-                }else {
-                    SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c");
-                }
+        newbtn.setOnClickListener(view -> {
+            if (myet.getText().length() !=12){
+                Toast.makeText(getApplicationContext(),"LOCKID can only be a 12 bit number",Toast.LENGTH_LONG).show();
+            }else {
+                SinovoBle.getInstance().addLock(myet.getText().toString(),"ac1234ed5b8c");
             }
         });
 
-        adduserbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                BleConnectLock mylock = new BleConnectLock("00:A0:51:F4:E1:85","37120a");
-                ArrayList<BleConnectLock> mylist = new ArrayList<>();
-                mylist.add(mylock);
+        adduserbtn.setOnClickListener(view -> {
+            BleConnectLock mylock = new BleConnectLock("00:A0:51:F4:E1:85","37120a");
+            ArrayList<BleConnectLock> mylist = new ArrayList<>();
+            mylist.add(mylock);
 
-                SinovoBle.getInstance().autoConnectLock(mylist);
-            }
+            SinovoBle.getInstance().autoConnectLock(mylist, false);
         });
 
-        chkp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                SinovoBle.getInstance().requestLockInfo("02");
-            }
-        });
+        chkp.setOnClickListener(view -> SinovoBle.getInstance().requestLockInfo("02"));
 
         //初始化蓝牙
         SinovoBle.getInstance().init(this.getApplicationContext(),mBleScanCallBack, mConnCallBack);
+
+        //初始化mqtt
+       // MqttLib.getInstance().init();
     }
 }

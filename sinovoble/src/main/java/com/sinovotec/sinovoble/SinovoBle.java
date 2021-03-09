@@ -7,7 +7,10 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,7 +33,6 @@ import com.sinovotec.encryptlib.LoadLibJni;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-
 
 public class SinovoBle {
     private final String TAG = "SinovoBle";
@@ -312,22 +314,30 @@ public class SinovoBle {
             //注册广播，监听蓝牙 状态的该表
             BluetoothListenerReceiver receiver = new BluetoothListenerReceiver();
             context.registerReceiver(receiver,makeFilter());
-
-            //加载 so库，初始化
-//            if (LoadLibJni.LoadLib()){
-//                Log.d(TAG, "加载 so库，初始化 成功");
-//                myJniLib = new LoadLibJni();
-//            }else {
-//                Log.e(TAG, "加载 so库，初始化 失败");
-//            }
         }
     }
+
+    //监听广播
     private IntentFilter makeFilter() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+
+        filter.addAction(BluetoothDevice.ACTION_NAME_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+
+        //20181221 增加，对屏幕的亮起 和 熄灭的广播进行监控
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+
+        //20210126 增加，对wifi开启关闭、网络连接状态的广播进行监控
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         return filter;
     }
 
+    //开始进行扫描
     public void startBleScan(){
         if (SinovoBle.getInstance().isConnectting()){
             Log.e(TAG,"当前正在连接，不能进行扫描");
@@ -342,6 +352,7 @@ public class SinovoBle {
             bindTimeoutHandler.postDelayed(this::checkScanResult, 60*1000);
         }
 
+        //扫描的函数
         bleScan(getmBleScanCallBack());
     }
 
@@ -370,7 +381,7 @@ public class SinovoBle {
            // Log.w(TAG,"取消 绑定超时检测");
             SinovoBle.getInstance().getBindTimeoutHandler().removeCallbacksAndMessages(null);
         }
-       // Log.d(TAG,"调用 addLock");
+        Log.d(TAG,"调用 addLock");
         setScanAgain(true);
         setBindMode(true);
         setLockID(lockqrID);
@@ -430,6 +441,7 @@ public class SinovoBle {
         }
     }
 
+    //检查是否有错
     private int checkEnvir(){
         if (SinovoBle.getInstance().getLockSNO() == null){
             Log.e(TAG,"SNO error");
@@ -491,9 +503,9 @@ public class SinovoBle {
      * 为用户添加一组数据,密码、卡、指纹
      * @param userNID       用户nid
      * @param dataType      数据类型， 02 普通密码，03超级用户密码，06是卡，07是指纹，08是防胁迫指纹
-     * @param password      添加密码时具体的密码内容， 如果是添加卡/指纹时，留空即可
+     * @param data          添加密码时具体的密码内容， 如果是添加卡/指纹时，留空即可
      */
-    public int addDataForUser(String userNID, String dataType, String password){
+    public int addDataForUser(String userNID, String dataType, String data){
         if (userNID.isEmpty() || dataType.isEmpty()){
             Log.e(TAG,"Parameter error");
             return 2;
@@ -506,19 +518,19 @@ public class SinovoBle {
 
         //添加密码时
         if (dataType.equals("02") || dataType.equals("03") || dataType.equals("05")){
-            if (password.isEmpty()){
+            if (data.isEmpty()){
                 Log.e(TAG,"Parameter error");
                 return 2;
             }
 
-            String data = SinovoBle.getInstance().getLockSNO() +userNID + dataType + password;
-            BleData.getInstance().exeCommand("05", data, false);
+            String data_s = SinovoBle.getInstance().getLockSNO() +userNID + dataType + data;
+            BleData.getInstance().exeCommand("05", data_s, false);
         }
 
         //添加卡、指纹、防胁迫指纹
         if (dataType.equals("06") || dataType.equals("07") || dataType.equals("08")){
-            String data = SinovoBle.getInstance().getLockSNO() +userNID + dataType ;
-            BleData.getInstance().exeCommand("05", data, true);
+            String data_s = SinovoBle.getInstance().getLockSNO() +userNID + dataType ;
+            BleData.getInstance().exeCommand("05", data_s, true);
         }
         return 0;
     }
@@ -951,39 +963,37 @@ public class SinovoBle {
     /**
      * 连接蓝牙设备
      * @param bluetoothDevice  待连接的设备
-     * @return      //是否连接成功
      */
-    public boolean connectBle(final BluetoothDevice bluetoothDevice) {
+    public void connectBle(final BluetoothDevice bluetoothDevice) {
         if (SinovoBle.getInstance().getBluetoothAdapter() == null || bluetoothDevice == null) {
             SinovoBle.getInstance().setConnectting(false);
             Log.e(TAG, "Bluetooth Adapter is null");
-            return false;
+            return;
         }
 
         if (!SinovoBle.getInstance().getBluetoothAdapter().isEnabled()) {
             SinovoBle.getInstance().setConnectting(false);
             Log.e(TAG, "Bluetooth not enabled");
-            return false;
+            return;
         }
 
         if (SinovoBle.getInstance().isLinked() || SinovoBle.getInstance().isBleConnected()){
             SinovoBle.getInstance().setConnectting(false);
             Log.e(TAG, "It's connected. Ignore this connection request");
-            return false;
+            return;
         }
 
         if (SinovoBle.getInstance().isConnectting()){
             String nowtime = ComTool.getNowTime();
             if (getConnectTime()!=null && ComTool.calTimeDiff(getConnectTime(), nowtime) <20) {
                 Log.e(TAG, "It's connecting. Ignore this connection request");
-                return false;
+                return;
             }
         }
 
         setConnectTime(ComTool.getNowTime());
         SinovoBle.getInstance().setConnectting(true);
         SinovoBle.getInstance().setConnectingMac(bluetoothDevice.getAddress());
-      //  Log.e(TAG, "设置正在进行连接，设置连接时间为：" + getConnectTime() + ",准备连接的mac："+ bluetoothDevice.getAddress());
 
         Handler mHandler = new Handler(getContext().getMainLooper());
         mHandler.post(() -> {
@@ -1001,7 +1011,6 @@ public class SinovoBle {
         });
 
         Log.d(TAG, "connectGatt to：" + bluetoothDevice.getAddress());
-        return true;
     }
 
     //对外提供断开连接
@@ -1054,6 +1063,4 @@ public class SinovoBle {
         this.connectingMac = connectingMac;
     }
 
-    public void autoConnectLock(ArrayList<BleConnectLock> mylist) {
-    }
 }

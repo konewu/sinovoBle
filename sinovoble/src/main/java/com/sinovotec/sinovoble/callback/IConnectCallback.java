@@ -10,14 +10,8 @@ public interface IConnectCallback {
     //连接失败
     void onConnectFailure();
 
-    //关闭手机蓝牙时的返回
-    void onBluetoothOff();
-
-    //打开手机蓝牙时的返回
-    void onBluetoothOn();
-
     //连接断开
-    void onDisconnect(String macaddress);
+    void onBleDisconnect(String macaddress);
 
     //添加锁
     void onAddLock(String result);
@@ -66,5 +60,36 @@ public interface IConnectCallback {
 
     //发送数据没有回应
     void onReceiveDataFailed();
+
+    //监听广播
+    //关闭手机蓝牙时的返回
+    void onBluetoothOff();
+
+    //打开手机蓝牙时的返回
+    void onBluetoothOn();
+
+    //手机通过wifi连接
+    void onConnectedViaWifi(String wifiSSID);
+
+    //手机通过数据网络连接
+    void onConnectedViaMobile();
+
+    //手机网络断开
+    void onInternetDisconned();
+
+    //获取不到手机网络
+    void onFaildGetInternetInfo();
+
+    //打开手机的wifi
+    void onWifiOn();
+
+    //关闭手机的wifi
+    void onWifiOff();
+
+    //手机屏幕亮屏
+    void onScreenOn();
+
+    //手机屏幕锁屏
+    void onScreenOff();
 
 }

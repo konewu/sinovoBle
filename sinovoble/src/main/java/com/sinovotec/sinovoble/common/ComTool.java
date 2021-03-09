@@ -1,6 +1,9 @@
 package com.sinovotec.sinovoble.common;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -207,5 +210,15 @@ public class ComTool {
             imeiStr.append(randNum);
         }
         return imeiStr.toString();
+    }
+
+    /**
+     * 获取手机连接wifi的名称
+     * @param mContext 上下文对象
+     */
+    public static String getWifiName(Context mContext) {
+        WifiManager wifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        return wifiInfo.getSSID().replace("\"","");
     }
 }
